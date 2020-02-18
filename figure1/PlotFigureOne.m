@@ -28,7 +28,7 @@ for d = 10:10; %length(DIRS)
             spike_traces(c,:) = spike_trace./max(spike_trace);
             maxFR(c,:) = max( spike_trace);
             offset = offset+1;
-            plot(x, smooth(spike_traces(c,:),5)+offset, 'k')
+            plot(x, spike_traces(c,:)+offset, 'k')
         end
         
         [pupil_trace, running_trace] = resampleTraces(1:recLength*1000, laxis1, moves_trace1);

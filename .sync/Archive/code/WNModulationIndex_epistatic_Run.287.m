@@ -51,7 +51,7 @@ for cc =1:length(data)
         end
         % exclude cells with very low spikecount, they usually have very
         % large effects; count spikes to WN only
-        if meanSpikeCount > 2 && CellsQualityStats.SNR(cc)>.5 && CellsQualityStats.uQ(cc)>10
+        if meanSpikeCount > .5 && CellsQualityStats.SNR(cc)>.5 && CellsQualityStats.uQ(cc)>10
             
             Spont = [data(cc).mSSon; data(cc).mSSoff]; % spont trials in all states
             PreStim = [data(cc).mNson; data(cc).mNsoff]; %pre stimulus fr
@@ -839,46 +839,28 @@ MI1_sp_runLaser = (SP1L(:,1) - SP1(:,2))./(SP1L(:,1) + SP1(:,2));
 
 % predicted effect
 MI1_predicted = MI1 + MI1_Laser;
-MI1_sp_predicted = MI1_sp + MI1_sp_Laser;
+MI1_sp_predicted = SP1 + SP1_Laser;
 
-figure; subplot(2,1,1); hold on
+figure; subplot(2,1,1)
 plot(MI1, MI1_Laser, 'ko')
-plot([-1 1], [-1 1], 'r--')
 xlabel('running MI'); ylabel('VIP MI')
 [r, p] = corr(MI1,MI1_Laser, 'Type','Spearman','Rows', 'complete');
 title_string = sprintf( 'Evoked, rho = %.4f, p = %.4f', r, p);
 title(title_string)
-subplot(2,1,2); hold on
+subplot(2,1,2)
 plot(MI1_sp, MI1_sp_Laser, 'ko')
-plot([-1 1], [-1 1], 'r--')
 xlabel('running MI'); ylabel('VIP MI')
 [r, p] = corr(MI1_sp,MI1_sp_Laser, 'Type','Spearman','Rows', 'complete');
 title_string = sprintf( 'Spont, rho = %.4f, p = %.4f', r, p);
 title(title_string)
-set(gcf, 'PaperPositionMode', 'auto');
-
-% linearity analysis
-figure; subplot(2,1,1); hold on
-plot(MI1_predicted, MI1_runLaser, 'ko')
-plot([0 0], [-2 2], 'k--'); plot( [-2 2], [0 0], 'k--')
-lsline
-xlabel('predicted MI'); ylabel('VIP + running MI')
-[r, p] = corr(MI1_predicted, MI1_runLaser, 'Type','Spearman','Rows', 'complete');
-title_string = sprintf( 'Evoked, rho = %.4f, p = %d', r, p);
-title(title_string)
-subplot(2,1,2); hold on
-plot(MI1_sp_predicted, MI1_sp_runLaser, 'ko')
-plot([0 0], [-2 2], 'k--'); plot( [-2 2], [0 0], 'k--')
-lsline
-xlabel('predicted MI'); ylabel('VIP + running MI')
-[r, p] = corr(MI1_sp_predicted,MI1_sp_runLaser, 'Type','Spearman','Rows', 'complete');
-title_string = sprintf( 'Spont, rho = %.4f, p = %d', r, p);
-title(title_string)
-set(gcf, 'PaperPositionMode', 'auto');
 
 
 
-%%  STOP HERE, THE REST IS OLD
+
+
+
+
+
 
 figure; all_MI=[];
 mi_cl = []; mi_sp_cl = [];

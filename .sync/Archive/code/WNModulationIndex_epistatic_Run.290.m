@@ -51,7 +51,7 @@ for cc =1:length(data)
         end
         % exclude cells with very low spikecount, they usually have very
         % large effects; count spikes to WN only
-        if meanSpikeCount > 2 && CellsQualityStats.SNR(cc)>.5 && CellsQualityStats.uQ(cc)>10
+        if meanSpikeCount > .5 && CellsQualityStats.SNR(cc)>.5 && CellsQualityStats.uQ(cc)>10
             
             Spont = [data(cc).mSSon; data(cc).mSSoff]; % spont trials in all states
             PreStim = [data(cc).mNson; data(cc).mNsoff]; %pre stimulus fr
