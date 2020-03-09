@@ -19,7 +19,7 @@ SS_region = [-25:650];
 laserStart =[]; laserWidth=[]; TR = [];
 pupil_thresholds = [.55 .55 .50 .55 .55 .55 .55 .6 .6 .6 .55 .5 .45 .35 .55 ...
     .55 .45 .45 .55 .40 .45 .5 .55 .45 .5 .55 .35 .5 .4 .55 .4 .5 .47 .4 .55 .55 .55 .55 .55 .55 .55 .55 .55 .55 .55 .55];
-stimulus = 'WNOFF';
+stimulus = 'WNON';
 cc=0; 
 for d = 1:length(DIRS)
     if ~isempty(DIRS{d})
@@ -67,7 +67,7 @@ for d = 1:length(DIRS)
             
             nrepsWNPM = 0; pmNON = []; pmNSustained = []; pmNOFF = [];
             spikeCountPMON =[]; spikeCountPMOFF =[];  pmWN =[]; pmNs = [];
-            nrepsSSPM = 0; pmNSS = []; pmSS =[];
+            nrepsSSPM = 0; pmNSS = []; pmSS =[]; mST_off=[]; mST_on=[];
             
             
             spikeCountPonON = []; spikeCountPoffON =[]; spikeCountPonOFF =[]; spikeCountPoffOFF =[];
@@ -99,6 +99,7 @@ for d = 1:length(DIRS)
             N1 = hist(st1,[0:binwidth:600]);
             N1 = N1./nrepsM1;
             N1 = 1000*N1./binwidth;
+            
             st2 =  mSS.spiketimes;
             st2 = st2(st2>0 & st2<600);
             N2 = hist(st2,[0:binwidth:600]);
@@ -134,11 +135,12 @@ for d = 1:length(DIRS)
             nrepsSS = 0;
             % single trials
             for i = 1:length(Events)
-                if Events(i).laser==laser % && Events(i).LaserOnOff == laser % comment it out during off trials
+                if Events(i).laser==laser  && Events(i).LaserOnOff == laser % comment it out during off trials
                     if strcmp(Events(i).type, 'whitenoise')
                         
                         nrepsWN=nrepsWN+1;
                         st = M1(nrepsWN).spiketimes;
+                        st2 = st;
                         SpikeCountWN(nrepsWN) = length(st);
                         stON = st(st> ONresponse_region(1) & st<ONresponse_region(end));
                         stSustained = st(st> Sustainedresponse_region(1) & st<Sustainedresponse_region(end));
@@ -189,6 +191,8 @@ for d = 1:length(DIRS)
                             spikeCountMonOFF(nrepsWNMon) = length(stOFF);
                             mWNon(nrepsWNMon,:) = Nr;
                             mNson(nrepsWNMon,:) = Ns;
+                            mEvokedON_on(nrepsWNMon,:) = nanmean(NON)-nanmean(Ns);
+                            mST_on = [mST_on st2];
                         elseif motion_indx(i)==0 %&& pupil_indx(i)==0;
                             nrepsWNMoff = nrepsWNMoff+1;
                             mNON_off(nrepsWNMoff,:) = NON;
@@ -198,6 +202,8 @@ for d = 1:length(DIRS)
                             spikeCountMoffOFF(nrepsWNMoff) = length(stOFF);
                             mWNoff(nrepsWNMoff,:) = Nr;
                             mNsoff(nrepsWNMoff,:) = Ns;
+                            mEvokedON_off(nrepsWNMoff,:) = nanmean(NON)-nanmean(Ns);
+                            mST_off = [mST_off st2];
                         end
                         
                         %pupil without motion
@@ -323,7 +329,7 @@ for d = 1:length(DIRS)
             WNdata(cc).nrepsWNPM = nrepsWNPM;
             WNdata(cc).pmNON = pmNON;
             WNdata(cc).pmNSustained = pmNSustained;
-            WNdata(cc).pmNOFF=pmNOFF;
+            WNdata(cc).pmNOFF = pmNOFF;
             WNdata(cc).spikeCountPMON = spikeCountPMON;
             WNdata(cc).spikeCountPMOFF = spikeCountPMOFF;
             WNdata(cc).pmWN = pmWN;
@@ -342,7 +348,10 @@ for d = 1:length(DIRS)
             WNdata(cc).depth = cds(c);
             WNdata(cc).WNresponse = N1;
             WNdata(cc).SSresponse = N2;
-
+%             WNdata(cc). mEvokedON_off = mEvokedON_off;
+%             WNdata(cc).mEvokedON_on = mEvokedON_on;
+            WNdata(cc).mST_off = mST_off;
+            WNdata(cc).mST_on = mST_on;
         end % cells
         close all
     else
@@ -361,9 +370,9 @@ for d = 1:length(DIRS)
     end
 end
 cdPV
-WNdataLaserOFF = WNdata;
+WNdataLaserON = WNdata;
 cd(save_dir)
-save('WNdataLaserOFF.mat', 'WNdataLaserOFF')
+save('WNdataLaserON.mat', 'WNdataLaserON')
 toc
 
 %01.20.20 ira three states : running, sitting + small pupil, sitting +

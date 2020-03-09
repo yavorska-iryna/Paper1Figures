@@ -2,9 +2,9 @@
 % variables gethered with getWNresponses.m
 
 % three states: sit + small pupil, sit + large pupil, running  + large
-% 
+%
 
-clear; close all
+clear; close all; dbstop if error
 variables_dir = 'C:\Users\lab\Resilio Sync\Paper1Figures\code\variables';
 
 cd(variables_dir);
@@ -13,30 +13,38 @@ data = WNdataLaserOFF;
 load('WNdataLaserON.mat');
 data1 = WNdataLaserON;
 load('CellsQualityStats.mat')
+load ('C:\Users\lab\Resilio Sync\Paper1Figures\code\colorblind_colormap.mat'); % use color blind friendly colors
+sit_color = 4;
+run_color = 2;
+laser_color = 11;
 
- maxFRall =[];
+maxFRall =[];
 SP = nan(length(data),2);
-SP = nan(length(data),2);
+SPL = nan(length(data),2);
 meanON = nan(length(data),2); % On response only (0 - 100 ms)
-meanONL = nan(length(data),2); 
+meanONL = nan(length(data),2);
 meanWN = nan(length(data),2); % Full response (0 - 600 ms)
 meanWNL = nan(length(data),2);
-depths = nan(length(data),1); 
-fs = zeros(length(data),1); 
+meanPreStim = nan(length(data),2);
+meanPreStimL = nan(length(data),2);
+meanSilentSound = nan(length(data),2);
+depths = nan(length(data),1);
+fs = zeros(length(data),1);
 Rs = zeros(length(data),1);
-WNdirsM =[]; WNcellsM = 0; SSdirsM =[]; SScellsM = 0; 
+WNdirsM =[]; WNcellsM = 0; SSdirsM =[]; SScellsM = 0;
 recs = []; cells=[];
 
-evoked = nan(length(data),4); 
+evoked = zeros(length(data),4); zstats = zeros(length(data),4);
 color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
-nreps_check_running = 7; %number of repetitions in each condition for comparison
+nreps_check_running = 6; %number of repetitions in each condition for comparison
 nreps_check_pupil = 8;
 CL = {[0 301], [300 401], [400 601], [600 2000]};
 
 cdVIP; load('Silence_DistanceCorr_dirs.mat')
 
 for cc =1:length(data)
-    if data(cc).dir<46
+    if data(cc).dir < 47
+        if data(cc).dir~=33
         try
             meanSpikeCount = nanmean([data(cc).SpikeCountWN data1(cc).SpikeCountWN ]); %data(cc).SpikeCountSS data1(cc).SpikeCountSS
         catch
@@ -44,7 +52,7 @@ for cc =1:length(data)
         end
         % exclude cells with very low spikecount, they usually have very
         % large effects; count spikes to WN only
-        if meanSpikeCount > 0 && CellsQualityStats.SNR(cc)>.5 && CellsQualityStats.uQ(cc)>10 
+        if meanSpikeCount > 3  && CellsQualityStats.SNR(cc)>.5 && CellsQualityStats.uQ(cc)>10
             
             Spont = [data(cc).mSSon; data(cc).mSSoff]; % spont trials in all states
             PreStim = [data(cc).mNson; data(cc).mNsoff]; %pre stimulus fr
@@ -53,13 +61,14 @@ for cc =1:length(data)
             [rs, h, stats] = ranksum( ON(:), Spont(:));
             evoked(cc,1) = h;
             zstats(cc,1) = stats.zval;
+            %zstats(cc,1) = stats.tstat;
             
-            Sust = [data(cc).mNSustained_on; data(cc).mNSustained_off]; 
+            Sust = [data(cc).mNSustained_on; data(cc).mNSustained_off];
             [rs, h, stats] = ranksum( Sust(:), Spont(:));
             evoked(cc,2) = h;
             zstats(cc,2) = stats.zval;
             
-            OFF = [data(cc).mNOFF_on; data(cc).mNOFF_off]; 
+            OFF = [data(cc).mNOFF_on; data(cc).mNOFF_off];
             [rs, h, stats] = ranksum(OFF(:), Spont(:));
             evoked(cc,3) = h;
             zstats(cc,3) = stats.zval;
@@ -68,14 +77,15 @@ for cc =1:length(data)
             evoked(cc,4) = h;
             zstats(cc,4) = stats.zval;
             
-            % WN laser off trials 
+            % WN laser off trials
             if data(cc).nrepsWNMon > nreps_check_running && data(cc).nrepsWNMoff > nreps_check_running %&& data1(cc).nrepsWNMon > nreps_check_running && data1(cc).nrepsWNMoff > nreps_check_running
-                meanWN(cc,1)= nanmean([nanmean(nanmean(data(cc).mWNon))]);% nanmean(nanmean(data(cc).mNSustained_on)) nanmean(nanmean(data(cc).mNOFF_on))]);
-                meanWN(cc,2)= nanmean([nanmean(nanmean(data(cc).mWNoff))]);% nanmean(nanmean(data(cc).mNSustained_off)) nanmean(nanmean(data(cc).mNOFF_off))]);
-                meanON(cc,1) =nanmean([nanmean(nanmean(data(cc).mNON_on))]);%-nanmean(nanmean(data(cc).mNson));
-                meanON(cc,2) =nanmean([nanmean(nanmean(data(cc).mNON_off))]);%-nanmean(nanmean(data(cc).mNsoff));
-                
-                WNdirsM = [WNdirsM data(cc).dir]; % collect directory (rec#) for all recordings included in the analysis to make sure N is ok. 
+                meanWN(cc,1)= nanmean(nanmean(data(cc).mWNon));% nanmean(nanmean(data(cc).mNSustained_on)) nanmean(nanmean(data(cc).mNOFF_on))]);
+                meanWN(cc,2)= nanmean(nanmean(data(cc).mWNoff));% nanmean(nanmean(data(cc).mNSustained_off)) nanmean(nanmean(data(cc).mNOFF_off))]);
+                meanON(cc,1) = nanmean(nanmean(data(cc).mNON_on));%-nanmean(nanmean(data(cc).mNson));
+                meanON(cc,2) = nanmean(nanmean(data(cc).mNON_off));%-nanmean(nanmean(data(cc).mNsoff));
+                meanPreStim(cc,1) = nanmean(nanmean(data(cc).mNson));
+                meanPreStim(cc,2) = nanmean(nanmean(data(cc).mNsoff));
+                WNdirsM = [WNdirsM data(cc).dir]; % collect directory (rec#) for all recordings included in the analysis to make sure N is ok.
                 WNcellsM = WNcellsM + 1; % count number of cells included in the analysis
             end
             
@@ -85,20 +95,23 @@ for cc =1:length(data)
                 meanWNL(cc,2)= nanmean(nanmean(data1(cc).mWNoff));%nanmean([nanmean(nanmean(data1(cc).mNON_off)) nanmean(nanmean(data1(cc).mNSustained_off)) nanmean(nanmean(data1(cc).mNOFF_off))]);
                 meanONL(cc,1) =nanmean([nanmean(nanmean(data1(cc).mNON_on))]);%-nanmean(nanmean(data1(cc).mNson));
                 meanONL(cc,2) =nanmean([nanmean(nanmean(data1(cc).mNON_off))]);%-nanmean(nanmean(data1(cc).mNsoff));
+                meanPreStimL(cc,1) = nanmean([nanmean(nanmean(data1(cc).mNson))]);
+                meanPreStimL(cc,2) = nanmean([nanmean(nanmean(data1(cc).mNsoff))]);
             end
             
             % silent sound laser off
             if data(cc).nrepsSSMon > nreps_check_running && data(cc).nrepsSSMoff > nreps_check_running %&& data1(cc).nrepsSSMon > nreps_check_running && data1(cc).nrepsSSMoff > nreps_check_running
                 SP(cc,1) = nanmean(nanmean(data(cc).mSSon)); SP(cc,2) = nanmean(nanmean(data(cc).mSSoff));
-                
-                WNdirsM = [WNdirsM data(cc).dir]; % collect directory (rec#) for all recordings included in the analysis to make sure N is ok. 
+                meanSilentSound(cc,2) = nanmean([nanmean(nanmean(data(cc).mSSoff))]);
+                meanSilentSound(cc,1) = nanmean([nanmean(nanmean(data(cc).mSSon))]);
+                WNdirsM = [WNdirsM data(cc).dir]; % collect directory (rec#) for all recordings included in the analysis to make sure N is ok.
                 WNcellsM = WNcellsM + 1; % count number of cells included in the analysis
             end
             
             % silent sound laser on
-             if data1(cc).nrepsSSMon > nreps_check_running && data1(cc).nrepsSSMoff > nreps_check_running && data(cc).nrepsSSMon > nreps_check_running && data(cc).nrepsSSMoff > nreps_check_running
+            if data1(cc).nrepsSSMon > nreps_check_running && data1(cc).nrepsSSMoff > nreps_check_running && data(cc).nrepsSSMon > nreps_check_running && data(cc).nrepsSSMoff > nreps_check_running
                 SPL(cc,1) = nanmean(nanmean(data1(cc).mSSon)); SPL(cc,2) = nanmean(nanmean(data1(cc).mSSoff));
-             end
+            end
         else
             evoked(cc,:,:,:) = [0 0 0 0];
             zstats(cc, :,:,:) = [NaN NaN NaN NaN];
@@ -118,6 +131,7 @@ for cc =1:length(data)
                 Rs(cc) = 1;
             end
         end
+        end
     end
     recs = [recs data(cc).dir];
     cells = [cells data(cc).cell];
@@ -125,14 +139,43 @@ end
 
 allDirsM = unique(WNdirsM);
 
-% activated cell only
-evoked1 = evoked(:,1) & zstats(:,4)>0;
-WN1 = meanON(evoked1,1:4);
-WN1L = meanONL(evoked1,1:4);
-SP1 = SP(evoked1,1:4);
-SP1L = SPL(evoked1,1:4);
-depth1 = depths(evoked1);
-fs1 = fs(evoked1); 
+% which cells to include? 1- On response, 2 - Sustained, 3-  Off response,
+% 4 - full 600 ms. zstats > 0 activated, <0 suppressed
+% 
+evoked1 = logical(evoked(:,1) & zstats(:,1)>0); 
+
+%evoked1 = logical(ones(length(evoked),1));
+
+responses =  (meanON - SP)./(meanON+SP);
+figure; hist(responses)
+legend('running', 'sitting')
+[p, h, stats]= signrank(responses(:,1), responses(:,2));
+title_string = sprintf( 'Sound Modulation Index all cells On responses z = %.2f, p = %d', stats.zval, p);
+title(title_string)
+xlabel('Sound MI')
+ylabel('Number of cells')
+
+responses =  (meanWN - SP)./(meanWN+SP);
+figure; hist(responses)
+legend('running', 'sitting')
+[p, h, stats]= signrank(responses(:,1), responses(:,2));
+title_string = sprintf( 'Sound Modulation Index all cells Full responses z = %.2f, p = %d', stats.zval, p);
+title(title_string)
+xlabel('Sound MI')
+ylabel('Number of cells')
+
+
+WN1 = meanON(evoked1,:);
+WN1L = meanONL(evoked1,:);
+%WN1 = meanWN(evoked1,:);
+%WN1L = meanWNL(evoked1,:);
+SP1 = SP(evoked1,:);
+SP1L = SPL(evoked1,:);
+meanPreStim1 = meanPreStim(evoked1,:);
+meanPreStim1L = meanPreStimL(evoked1,:);
+meanSilentSound1 = meanSilentSound(evoked1,:);
+depths1 = depths(evoked1);
+fs1 = fs(evoked1);
 rs1 = Rs(evoked1);
 rs1 = logical(rs1); fs1 = logical(fs1);
 
@@ -142,7 +185,7 @@ modulation_indx1_sp = (SP1(:,1) - SP1(:,2))./(SP1(:,1) + SP1(:,2));
 
 %modulation index by cell type
 modulation_indx1_rs = (WN1(rs1,1) -WN1(rs1,2))./(WN1(rs1,1) + WN1(rs1,2)); %running
-modulation_indx1_fs = (WN1(fs1,1) -WN1(fs1,4))./(WN1(fs1,1) + WN1(fs1,2)); %running
+modulation_indx1_fs = (WN1(fs1,1) -WN1(fs1,2))./(WN1(fs1,1) + WN1(fs1,2)); %running
 
 modulation_indx1_sp_rs = (SP1(rs1,1) -SP1(rs1,2))./(SP1(rs1,1) + SP1(rs1,2)); %running
 modulation_indx1_sp_fs = (SP1(fs1,1) -SP1(fs1,2))./(SP1(fs1,1) + SP1(fs1,2)); %running
@@ -152,6 +195,15 @@ modulation_indx1_fsL = (WN1L(fs1,1) -WN1L(fs1,2))./(WN1L(fs1,1) + WN1L(fs1,2)); 
 
 modulation_indx1_sp_rsL = (SP1L(rs1,1) -SP1L(rs1,2))./(SP1L(rs1,1) + SP1L(rs1,2)); %running
 modulation_indx1_sp_fsL = (SP1L(fs1,1) -SP1L(fs1,2))./(SP1L(fs1,1) + SP1L(fs1,2)); %running
+
+% subtract spontaneous activity from evoked
+indx = find(WN1(:,2)< meanPreStim1(:,2));
+indx1 = find(WN1(:,1) < meanPreStim1(:,1));
+WN2 = WN1 - meanPreStim1; WN2L = WN1L - meanPreStim1L;
+WN2(indx,:) = NaN; WN2(indx1,:) = NaN;
+%WN2 = WN1 - meanSilentSound1; WN2L = WN1L - meanPreStim1L;
+modulation_indx2 = (WN2(:,1) -WN2(:,2))./(WN2(:,1) + WN2(:,2));
+modulation_indx2L = (WN2L(:,1) -WN2L(:,2))./(WN2L(:,1) + WN2L(:,2));
 
 
 %% plot the results
@@ -214,322 +266,671 @@ x=modulation_indx1;
 [p,tbl1,stats] = kruskalwallis(x, recs1);
 c = multcompare(stats);
 title('Evoked all cells, running')
-[m,s]=grpstats(x,recs_rs,{'mean','sem'})
-
+[m,s]=grpstats(x,recs1,{'mean','sem'})
 
 %[m,s]=grpstats(x,recs_rs,{'mean','sem'})
 r =unique(recs_rs);
 %%
-MODULATION_INDX1 = []; MODULATION_INDX1L = [];  %  for stats across cortical layers, evoked
-MODULATION_sp_INDX1 = []; MODULATION_sp_INDX1L = [];  %  for stats across cortical layers, spont
-cells1 = cells(evoked2); recs1 = recs(evoked2);
+MODULATION_INDX1 = []; MODULATION_INDX1L = [];  MODULATION_INDX1Laser = []; %  for stats across cortical layers, evoked
+MODULATION_sp_INDX1 = []; MODULATION_sp_INDX1L = []; MODULATION_sp_INDX1Laser = []; %  for stats across cortical layers, spont
+cells1 = cells(evoked1); recs1 = recs(evoked1); depths1 = depths(evoked1);
+
+
+modulation_indx1 = (WN1(:,1) -WN1(:,2))./(WN1(:,1) + WN1(:,2)); %running, laser off trials
+modulation_indx1L = (WN1L(:,1) -WN1L(:,2))./(WN1L(:,1) + WN1L(:,2)); %running, laser on trials
+modulation_indx1Laser = (WN1L(:,2) - WN1(:,2))./(WN1L(:,2) + WN1(:,2)); % effect of layer in this layer across states
+
+modulation_indx1_sp = (SP1(:,1) -SP1(:,2))./(SP1(:,1) + SP1(:,2)); %spont running effect laser off
+modulation_indx1_spL = (SP1L(:,1) -SP1L(:,2))./(SP1L(:,1) + SP1L(:,2)); %spont running effect laser on
+modulation_indx1_spLaser = (SP1L(:,2) - SP1(:,2))./(SP1L(:,2) + SP1(:,2)); %effects of laser in sitting
+
+MI_sp_plus = (SP1L(:,1) - SP1(:,2))./(SP1L(:,1) + SP1(:,2));
+MI_evoked_plus = (WN1L(:,1) - WN1(:,2))./(WN1L(:,1) + WN1(:,2));
+
+
 for cl = 1:length(CL)
-    layer = CL{cl};
-    indx = find(depths2 >layer(1) & depths2 <layer(2));
-    modulation_indx1 = (WN1(indx,1) -WN1(indx,4))./(WN1(indx,1) + WN1(indx,4)); %running
+    layer = CL{cl}; % layer depth limits
+    indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
+    recs2 = recs1(indx); % recordings in this layer
+    cells2 = cells1(indx); % cells in this layer
+    fs2 = fs1(indx); fs2 = logical(fs2); % fast spiking cells in this layer
+    rs2 = rs1(indx); rs2 = logical(rs2); % regular spiking cells in this layer
     
-    best_examples = find(modulation_indx1>0.2);
-    recs2 = recs1(indx);
-    cells2 = cells1(indx);
-    recs2(best_examples)
-    cells2(best_examples)
+    % % evoked (WN respone)
+    % means
+    meanMI1(cl) = nanmean(modulation_indx1(indx)); % mean, laser off
+    meanMI1L(cl) = nanmean(modulation_indx1L(indx)); % mean, laser on
+    meanMI1_Laser(cl) = nanmean(modulation_indx1Laser(indx)); % mean laser effect
+    meanMI2(cl) = nanmean(modulation_indx2(indx));
     
-    modulation_indx1L = (WN1L(indx,1) -WN1L(indx,2))./(WN1L(indx,1) + WN1L(indx,2)); %running + laser
-    modulation_indx1Laser = (nanmean(WN1L(indx,:),2) - nanmean(WN1(indx,:),2))./(nanmean(WN1L(indx,:),2) + nanmean(WN1(indx,:),2)); %running + laser
+    meanMI1_rs(cl) = nanmean(modulation_indx1(indx(rs2)));
+    meanMI1_fs(cl) = nanmean(modulation_indx1(indx(fs2)));
+    meanMI1_rsL(cl) = nanmean(modulation_indx1L(indx(rs2)));
+    meanMI1_fsL(cl) = nanmean(modulation_indx1L(indx(fs2)));
     
-    effect(cl).mi = modulation_indx1;
-    effect(cl).cells = cells2;
-    effect(cl).recs = recs2;
+    semMI1(cl) = sem(modulation_indx1(indx));
+    semMI1L(cl) = sem(modulation_indx1L(indx));
+    semMI1_Laser(cl) = sem(modulation_indx1Laser(indx));
+    semMI2(cl) = sem(modulation_indx2(indx));
     
-    fs2 = fs1(indx); fs2 = logical(fs2);
-    rs2 = rs1(indx); rs2 = logical(rs2);
+    semMI1_rs(cl) = sem(modulation_indx1(indx(rs2)));
+    semMI1_fs(cl) = sem(modulation_indx1(indx(fs2)));
+    semMI1_rsL(cl) = sem(modulation_indx1L(indx(rs2)));
+    semMI1_fsL(cl) = sem(modulation_indx1L(indx(fs2)));
     
-    %stats
-    MODULATION_INDX1 = [MODULATION_INDX1; modulation_indx1 ones(length(indx),1)*cl];
-    MODULATION_INDX1L = [MODULATION_INDX1L; modulation_indx1L ones(length(indx),1)*cl];
+    % collect modulation indices across layers for further stats [MI cl]
+    MODULATION_INDX1 = [MODULATION_INDX1; modulation_indx1(indx) ones(length(indx),1)*cl];
+    MODULATION_INDX1L = [MODULATION_INDX1L; modulation_indx1L(indx) ones(length(indx),1)*cl];
+    MODULATION_INDX1Laser = [MODULATION_INDX1Laser; modulation_indx1Laser(indx) ones(length(indx),1)*cl];
     
-    %
-    meanMI1_Laser(cl) = nanmean(modulation_indx1Laser);
-    semMI1_Laser(cl) = sem(modulation_indx1Laser);
+    n_layer_evoked(cl) = length(find(~isnan(modulation_indx1(indx))==1));
+    n_layer_evokedL(cl) = length(find(~isnan(modulation_indx1L(indx))==1));
+    n_layer_evokedLaser(cl) = length(find(~isnan(modulation_indx1Laser(indx))==1));
     
-    meanMI1(cl) = nanmean(modulation_indx1);
-    n_layer_evoked(cl,1) = length(find(~isnan(modulation_indx1)==1));
-    n_layer_evokedL(cl) = length(find(~isnan(modulation_indx1L)==1));
-    semMI1(cl) = sem(modulation_indx1);
-    meanMI1_fs(cl) = nanmean(modulation_indx1(fs2));
-    semMI1_fs(cl) = sem(modulation_indx1(fs2));
-    meanMI1_rs(cl) = nanmean(modulation_indx1(rs2));
-    semMI1_rs(cl) = sem(modulation_indx1(rs2));
-    
-    rs_cl(cl,1) = sum(~isnan(modulation_indx1(rs2)));
-    fs_cl(cl,1) = sum(~isnan(modulation_indx1(fs2)));
+    rs_cl(cl) = sum(~isnan(modulation_indx1(indx(rs2)))); % number of regular spiking cells in this layer
+    fs_cl(cl) = sum(~isnan(modulation_indx1(indx(fs2)))); % number of fast spiking cells in this layer
     
     % addative effect
-    MI_evoked_plus = (WN1L(indx,1) - WN1(indx,2))./(WN1L(indx,1) + WN1(indx,2));
-    meanMI_evoked_plus(cl) = nanmean(MI_evoked_plus);
-    semMI_evoked_plus(cl) = sem(MI_evoked_plus);
-    n_layer_evoked_plus(cl) = length(find(~isnan(MI_evoked_plus)==1));
+    meanMI_evoked_plus(cl) = nanmean(MI_evoked_plus(indx));
+    semMI_evoked_plus(cl) = sem(MI_evoked_plus(indx));
+    n_layer_evoked_plus(cl) = length(find(~isnan(MI_evoked_plus(indx))==1)); %number of cell
     
-    %laser on
-    meanMI1L(cl) = nanmean(modulation_indx1L);
-    semMI1L(cl) = sem(modulation_indx1L);
-    meanMI1_fsL(cl) = nanmean(modulation_indx1L(fs1));
-    semMI1_fsL(cl) = sem(modulation_indx1L(fs1));
-    meanMI1_rsL(cl) = nanmean(modulation_indx1L(rs1));
-    semMI1_rsL(cl) = sem(modulation_indx1L(rs1));
+    % evoked - spont
+    meanMI2(cl) = nanmean(modulation_indx2(indx)); % mean, laser off
+    meanMI2L(cl) = nanmean(modulation_indx2L(indx)); % mean, laser on
     
-    % spont act
-    indx = find(depths2 >layer(1) & depths2 <layer(2));
-    fs1 = fs1(indx); fs1 = logical(fs1);
-    rs1 = Rs(indx); rs1 = logical(rs1);
-    modulation_indx1_sp = (SP1(indx,1) -SP1(indx,2))./(SP1(indx,1) + SP1(indx,2)); %running + laser
-    modulation_indx1_spL = (SP1L(indx,1) -SP1L(indx,2))./(SP1L(indx,1) + SP1L(indx,2)); %running + laser
-    modulation_indx1_spLaser = (nanmean(SP1L(indx,:),2) - nanmean(SP1(indx,:),2))./(nanmean(SP1(indx,:),2) + nanmean(SP1(indx,:),2)); %running + laser
+    meanMI2(cl) = nanmean(modulation_indx2(indx));
+    meanMI2L(cl) = nanmean(modulation_indx2L(indx));
     
-    MI_sp_plus = (SP1L(indx,1) - SP1(indx,2))./(SP1L(indx,1) + SP1(indx,2));
-    meanMI_sp_plus(cl) = nanmean(MI_sp_plus);
-    semMI_sp_plus(cl) = sem(MI_sp_plus);
-    n_layer_sp_plus(cl) = length(find(~isnan(MI_sp_plus)==1));
+    semMI2(cl) = sem(modulation_indx2(indx));
+    semMI2L(cl) = sem(modulation_indx2L(indx));
     
-    meanMI1_sp(cl) = nanmean(modulation_indx1_sp);
-    n_layer_sp(cl,1) = length(find(~isnan(modulation_indx1_sp)==1)); %number of cells in each layer
-    n_layer_spL(cl) = length(find(~isnan(modulation_indx1_spL)==1));
-    meanMI1_spL(cl) = nanmean(modulation_indx1_spL);
-    meanMI1_spLaser(cl) = nanmean(modulation_indx1_spLaser);
-    semMI1_spLaser(cl) = sem(modulation_indx1_spLaser);
+    % % spont activity
+    meanMI1_sp(cl) = nanmean(modulation_indx1_sp(indx));
+    meanMI1_spL(cl) = nanmean(modulation_indx1_spL(indx));
+    meanMI1_spLaser(cl) = nanmean(modulation_indx1_spLaser(indx));
+    meanMI1_sp_rs(cl) = nanmean(modulation_indx1_sp(indx(rs2)));
+    meanMI1_spL_rs(cl) = nanmean(modulation_indx1_spL(indx(rs2)));
+    meanMI1_spLaser_rs(cl) = nanmean(modulation_indx1_spLaser(indx(rs2)));
+    meanMI1_sp_fs(cl) = nanmean(modulation_indx1_sp(indx(fs2)));
+    meanMI1_spL_fs(cl) = nanmean(modulation_indx1_spL(indx(fs2)));
+    meanMI1_spLaser_fs(cl) = nanmean(modulation_indx1_spLaser(indx(fs2)));
     
-
-    semMI1_sp(cl) = sem(modulation_indx1_sp);
-    semMI1_spL(cl) = sem(modulation_indx1_spL);
+    semMI1_sp(cl) = sem(modulation_indx1_sp(indx));
+    semMI1_spL(cl) = sem(modulation_indx1_spL(indx));
+    semMI1_spLaser(cl) = sem(modulation_indx1_spLaser(indx));
+    semMI1_sp_rs(cl) = sem(modulation_indx1_sp(indx(rs2)));
+    semMI1_spL_rs(cl) = sem(modulation_indx1_spL(indx(rs2)));
+    semMI1_spLaser_rs(cl) = sem(modulation_indx1_spLaser(indx(rs2)));
+    semMI1_sp_fs(cl) = sem(modulation_indx1_sp(indx(fs2)));
+    semMI1_spL_fs(cl) = sem(modulation_indx1_spL(indx(fs2)));
+    semMI1_spLaser_fs(cl) = sem(modulation_indx1_spLaser(indx(fs2)));
     
-    meanMI1_sp_fs(cl) = nanmean(modulation_indx1_sp(fs1));
-    rs_sp_cl(cl,1) = sum(~isnan(modulation_indx1_sp(rs1)));
-    fs_sp_cl(cl,1) = sum(~isnan(modulation_indx1_sp(fs1)));
+    n_layer_sp(cl) = length(find(~isnan(modulation_indx1_sp(indx))==1)); %number of cells in each layer
+    n_layer_spL(cl) = length(find(~isnan(modulation_indx1_spL(indx))==1));
+    n_layer_spLaser(cl) = length(find(~isnan(modulation_indx1_spLaser(indx))==1));
     
-    meanMI1_spL_fs(cl) = nanmean(modulation_indx1_spL(fs1));
-    semMI1_sp_fs(cl) = sem(modulation_indx1_sp(fs1));
-    semMI1_spL_fs(cl) = sem(modulation_indx1_spL(fs1));
+    rs_sp_cl(cl) = sum(~isnan(modulation_indx1_sp(indx(rs2))));
+    fs_sp_cl(cl) = sum(~isnan(modulation_indx1_sp(indx(fs2))));
     
-    meanMI1_sp_rs(cl) = nanmean(modulation_indx1_sp(rs1));
-    meanMI1_spL_rs(cl) = nanmean(modulation_indx1_spL(rs1));
-    semMI1_sp_rs(cl) = sem(modulation_indx1_sp(rs1));
-    semMI1_spL_rs(cl) = sem(modulation_indx1_spL(rs1));
+    % additive effect
+    meanMI_sp_plus(cl) = nanmean(MI_sp_plus(indx));
+    semMI_sp_plus(cl) = sem(MI_sp_plus(indx));
+    n_layer_sp_plus(cl) = length(find(~isnan(MI_sp_plus(indx))==1));
     
-    MODULATION_sp_INDX1 = [MODULATION_sp_INDX1; modulation_indx1_sp ones(length(indx),1)*cl];
-    MODULATION_sp_INDX1L = [MODULATION_sp_INDX1L; modulation_indx1_spL ones(length(indx),1)*cl];    
+    MODULATION_sp_INDX1 = [MODULATION_sp_INDX1; modulation_indx1_sp(indx) ones(length(indx),1)*cl];
+    MODULATION_sp_INDX1L = [MODULATION_sp_INDX1L; modulation_indx1_spL(indx) ones(length(indx),1)*cl];
+    MODULATION_sp_INDX1Laser = [MODULATION_sp_INDX1Laser; modulation_indx1_spLaser(indx) ones(length(indx),1)*cl];
 end
 
 % state by layer without layer
-figure(101); subplot(2,1,1); hold on
-errorbar([1:4], meanMI1, semMI1, 'ko');
-errorbar([1.2:4.2], meanMI2, semMI2, 'ro');
+figure; hold on; subplot(2,1,1); hold on
+errorbar([1:4], meanMI1, semMI1, 'ko-');
 xlabel('Cortical Layer')
+plot([0 5], [0 0], '--')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index'); title('WN response')
+ylabel('Modulation Index');
+title_string = sprintf('WN On response, n = %d, %d, %d, %d',  n_layer_evoked);
+title(title_string)
 % [p,tbl1,stats] = kruskalwallis(mi, layers);
 % c = multcompare(stats);
 subplot(2,1,2); hold on
-errorbar([1:4], meanMI1_sp, semMI1_sp, 'ko');
-errorbar([1.2:4.2], meanMI2_sp, semMI2_sp, 'ro');
-
+errorbar([1:4], meanMI1_sp, semMI1_sp, 'ko-');
 xlabel('Cortical Layer')
+plot([0 5], [0 0], '--')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index'); title('Spont activity');
+ylabel('Modulation Index');
+title_string = sprintf('Spont On response, n = %d, %d, %d, %d',  n_layer_sp);
+title(title_string)
+
+figure; hold on
+errorbar([1:4], meanMI2, semMI2, 'ko-');
+xlabel('Cortical Layer')
+plot([0 5], [0 0], '--')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Modulation Index');
+title_string = sprintf('Evoked (WN-SP), n = %d, %d, %d, %d',  n_layer_evoked);
+title(title_string)
+
+figure; hold on
+plot(modulation_indx1(rs1), modulation_indx1_sp(rs1), 'ko')
+plot(modulation_indx1(fs1), modulation_indx1_sp(fs1), 'bo')
+lsline; xlabel('response MI'); ylabel('spont MI')
+plot([0 0], [-1 1], 'k--')
+plot([-1 1], [0 0], 'k--')
+[r1, p1] = corr(modulation_indx1(rs1), modulation_indx1_sp(rs1), 'Type','Spearman','Rows', 'complete');
+[r2, p2] = corr(modulation_indx1(fs1), modulation_indx1_sp(fs1), 'Type','Spearman','Rows', 'complete');
+title_str = sprintf('rs rho = %.2f, p=%.4f; fs rho = %.2f, p = %.4f', r1, p1, r2, p2);
+title(title_str); pbaspect([1 1 1]);
 
 %State by layer with laser
-figure(101); subplot(2,1,2); hold on
-errorbar([1.1:4.1], meanMI1_spL, semMI1_spL, 'k>');
-errorbar([1.3:4.3], meanMI2_spL, semMI2_spL, 'b>');
-plot([0 5], [0 0], 'k--')
-legend({ 'run laser off', 'sit + large pupil laser off', 'run laser on', 'sit + large pupil laser on'})
+figure; hold on; subplot(2,1,1); hold on
+errorbar([1:4], meanMI1L, semMI1L, 'bo-');
 xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index'); title('Spont activity - VIP laser on')
-subplot(2,1,1); hold on
-errorbar([1.1:4.1], meanMI1L, semMI1L, 'k>');
-errorbar([1.3:4.3], meanMI2L, semMI2L, 'b>');
-plot([0 5], [0 0], 'k--')
-legend({ 'run laser off', 'sit + large pupil laser off', 'run laser on', 'sit + large pupil laser on'})
+ylabel('Modulation Index');
+title_string = sprintf('WN On response, laser on, n = %d, %d, %d, %d',  n_layer_evokedL);
+title(title_string)
+% [p,tbl1,stats] = kruskalwallis(mi, layers);
+% c = multcompare(stats);
+subplot(2,1,2); hold on
+errorbar([1:4], meanMI1_spL, semMI1_spL, 'bo-');
 xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index'); title('Evoked activity - VIP laser on')
+ylabel('Modulation Index');
+title_string = sprintf('Spont On response, laser on, n = %d, %d, %d, %d',  n_layer_spL);
+title(title_string)
+ set(gcf, 'PaperPositionMode', 'auto');
 
+figure; hold on; subplot(2,1,1); hold on
+errorbar([1:4], meanMI1_Laser, semMI1_Laser, 'co-');
+xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Modulation Index - Laser effect');
+title_string = sprintf('WN On response, n = %d, %d, %d, %d',  n_layer_evokedLaser);
+title(title_string)
+% [p,tbl1,stats] = kruskalwallis(mi, layers);
+% c = multcompare(stats);
+subplot(2,1,2); hold on
+errorbar([1:4], meanMI1_spLaser, semMI1_spLaser, 'co-');
+xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Modulation Index - Laser effect');
+title_string = sprintf('Spont On response, n = %d, %d, %d, %d',  n_layer_spLaser);
+title(title_string)
 
 % RS FS WN SP1 by layer
-figure(202); subplot(2,1,2); hold on
-errorbar([1:4], meanMI1_sp_rs, semMI1_sp_rs, 'ko');
-errorbar([1.2:4.2], meanMI2_sp_rs, semMI2_sp_rs, 'ro');
-errorbar([1.1:4.1], meanMI1_sp_fs, semMI1_sp_fs, 'k*');
-errorbar([1.3:4.3], meanMI2_sp_fs, semMI2_sp_fs, 'b*');
+figure; hold on; subplot(2,1,1); hold on
+errorbar([1:4], meanMI1_rs, semMI1_rs, 'ko-');
+errorbar([1.1:4.1], meanMI1_fs, semMI1_fs, 'k*-');
 plot([0 5], [0 0], 'k--')
-legend({ 'run rs', 'sit + large pupil rs', 'run fs', 'sit + large pupil fs'})
-xlabel('Cortical Layer')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index'); title('Spont Activity')
-subplot(2,1,1); hold on
-errorbar([1:4], meanMI1_rs, semMI1_rs, 'ko');
-errorbar([1.2:4.2], meanMI2_rs, semMI2_rs, 'ro');
-errorbar([1.1:4.1], meanMI1_fs, semMI1_fs, 'k*');
-errorbar([1.3:4.3], meanMI2_fs, semMI2_fs, 'b*');
-plot([0 5], [0 0], 'k--')
-legend({ 'run rs', 'sit + large pupil rs', 'run fs', 'sit + large pupil fs'})
+legend({ 'run rs', 'run fs'})
 xlabel('Cortical Layer')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
 ylabel('Modulation Index'); title('WN responses')
+hold on; subplot(2,1,2); hold on
+errorbar([1:4], meanMI1_sp_rs, semMI1_sp_rs, 'ko-');
+errorbar([1.1:4.1], meanMI1_sp_fs, semMI1_sp_fs, 'k*-');
+plot([0 5], [0 0], 'k--')
+legend({ 'run rs', 'run fs'})
+xlabel('Cortical Layer')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Modulation Index'); title('Spont Activity')
+
+% compare running, laser, and running + layer by layer
+% figure; hold on; subplot(2,1,1); hold on
+% errorbar([1:4], meanMI1, semMI1, 'ko');
+% errorbar([1.1:4.1], meanMI1_Laser, semMI1_Laser, 'bo');
+% errorbar([1.2:4.2], meanMI_evoked_plus, semMI_evoked_plus, 'go');
+% plot([0 5], [0 0], 'k--')
+% legend({ 'run', 'laser' 'run + laser' })
+% xlabel('Cortical Layer')
+% xticks([1:4]); xlim([0 5])
+% xticklabels({'2/3', '4', '5', '6'});
+% ylabel('Modulation Index - Run'); title('Evoked responses')
+% subplot(2,1,2); hold on
+% errorbar([1:4], meanMI1_sp, semMI1_sp, 'ko');
+% errorbar([1.1:4.1], meanMI1_spLaser, semMI1_spLaser, 'bo');
+% errorbar([1.2:4.2], meanMI_sp_plus, semMI_sp_plus, 'go');
+% plot([0 5], [0 0], 'k--')
+% legend({ 'run', 'laser' 'run + laser' })
+% xlabel('Cortical Layer')
+% xticks([1:4]); xlim([0 5])
+% xticklabels({'2/3', '4', '5', '6'});
+% ylabel('Modulation Index - Run'); title('Spont responses')
+
+% subtract spont activity from evoked.
+figure; hold on;  hold on
+errorbar([1:4], meanMI2, semMI2, 'ko-');
+xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Modulation Index');
+title_string = sprintf('WN On response (w/o spont), n = %d, %d, %d, %d',  n_layer_evoked);
+title(title_string)
 
 
-% compare laser
-%running
-figure(103); subplot(2,1,1); hold on
-errorbar([1:4], meanMI1, semMI1, 'ko');
-errorbar([1.1:4.1], meanMI1_Laser, semMI1_Laser, 'bo');
-errorbar([1.2:4.2], meanMI_evoked_plus, semMI_evoked_plus, 'go');
-plot([0 5], [0 0], 'k--')
-legend({ 'run', 'laser' 'run + laser' })
+% plot firing rate distributions
+figure; 
+h1 = histogram(WN1(:,1));
+h1.Normalization = 'probability';
+h1.BinWidth = 3;
+hold on;
+h2 = histogram(WN1(:,2));
+h2.Normalization = 'probability';
+h2.BinWidth = 3;
+
+figure; 
+h1 = histogram(SP1(:,1));
+h1.BinWidth = .5;
+hold on;
+h2 = histogram(SP1(:,2));
+h2.BinWidth = .5;
+ylabel('Number of cells')
+xlabel('Firing Rate (Hz)')
+legend('running', 'sitting')
+[p,h,stats] = signrank(SP1(:,1), SP1(:,2))
+title_str = sprintf('Spontaneous Activity, p = %d', p)
+title(title_str)
+
+figure; 
+h1 = histogram(WN1(:,1));
+h1.BinWidth = 3;
+hold on;
+h2 = histogram(WN1(:,2));
+h2.BinWidth = 3;
+ylabel('Number of cells')
+xlabel('Firing Rate (Hz)')
+legend('running', 'sitting')
+[p,h,stats] = signrank(WN1(:,1), WN1(:,2))
+title_str = sprintf('Evoked Activity, p = %d', p)
+title(title_str)
+
+%%
+% sound modulation index
+MI_sound_run = (WN1(:,1) - SP1(:,1))./ (WN1(:,1) +SP1(:,1));
+MI_sound_sit = (WN1(:,2) - SP1(:,2))./ (WN1(:,2) +SP1(:,2));
+MI_sound_run_laser = (WN1L(:,1) - SP1L(:,1))./ (WN1L(:,1) +SP1L(:,1));
+MI_sound_sit_laser = (WN1L(:,2) - SP1L(:,2))./ (WN1L(:,2) +SP1L(:,2));
+MI_sound_predicted = MI_sound_sit_laser + MI_sound_run;
+
+% indx = find(MI_sound_sit<0); 
+
+% plot MI
+figure; hold on
+plot(MI_sound_sit(rs1) ,MI_sound_run(rs1), 'ko')
+plot(MI_sound_sit(fs1) ,MI_sound_run(fs1), 'bo')
+ylabel('sound MI running'); xlabel('sound MI sitting')
+[r, p] = corr(MI_sound_run,MI_sound_sit, 'Type','Spearman','Rows', 'complete')
+plot([-1 1], [-1 1], 'r-')
+plot([-1 1], [0 0], 'k--')
+plot([0 0], [-1 1], 'k--')
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+
+% plot difference in MI
+run_diff =  MI_sound_run - MI_sound_sit;
+laser_diff = MI_sound_sit_laser - MI_sound_sit;
+predicted_diff = run_diff + laser_diff;
+actual_diff =  MI_sound_run_laser - MI_sound_sit;
+
+figure; hold
+plot(run_diff(rs1), laser_diff(rs1), 'ko')
+plot(run_diff(fs1), laser_diff(fs1), 'bo')
+xlabel('Running Effect (MI diff)')
+ylabel('Laser Effect (MI diff)')
+plot([-2 1], [0 0], 'k--')
+plot([0 0], [-2 1], 'k--')
+[r, p] = corr(run_diff,laser_diff, 'Type','Spearman','Rows', 'complete')
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string)
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+
+figure; hold
+plot(actual_diff(rs1), predicted_diff(rs1), 'ko')
+plot(actual_diff(fs1), predicted_diff(fs1), 'bo')
+xlabel('Running Effect (MI diff)')
+ylabel('Laser Effect (MI diff)')
+plot([-2 1], [0 0], 'k--')
+plot([0 0], [-2 1], 'k--')
+[r, p] = corr(run_diff,laser_diff, 'Type','Spearman','Rows', 'complete')
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string)
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+
+figure; hold on
+plot(actual_diff(rs1), predicted_diff(rs1), 'ko')
+plot(actual_diff(fs1), predicted_diff(fs1), 'ro')
+xlabel('Combined Effect (running laser on trials)')
+ylabel('Predicted combined Effect (running effect + laser effect)')
+plot([-2 2], [0 0], 'k--')
+plot([0 0], [-2 2], 'k--')
+[r, p] = corr(actual_diff,predicted_diff, 'Type','Spearman','Rows', 'complete')
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string)
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+
+[h1,x] = hist(MI_sound_sit, [-1:.1:1]);
+h = smooth(h1,3);
+figure; hold on
+plot(x,h);
+[h2,x] = hist(MI_sound_run, [-1:.1:1]);
+h = smooth(h2,3);
+plot(x,h, '--');
+title(' all On responses, laser off')
+legend('sitting - laser off', 'running - laser off')
+xlabel('Modulation Index - Sound')
+ylabel('Number of cells')
+
+figure; hold on;
+[h3,x] = hist(MI_sound_sit_laser, [-1:.1:1]);
+h = smooth(h3,3);
+plot(x,h);
+[h4,x] = hist(MI_sound_run_laser, [-1:.1:1]);
+h = smooth(h4,3);
+plot(x,h, '--');
+legend( 'sitting - laser on', 'running - laser on')
+xlabel('Modulation Index - Sound')
+ylabel('Number of cells')
+title(' all On responses, laser on')
+
+fprintf('running vs sitting, laser off')
+[p,h stats] =ranksum(MI_sound_run, MI_sound_sit)
+
+fprintf('running vs sitting, laser on')
+[p,h stats] =ranksum(MI_sound_run_laser, MI_sound_sit_laser)
+
+for cl = 1:length(CL)
+    layer = CL{cl}; % layer depth limits
+    indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
+    meanMI_sound_run(cl) = nanmean(MI_sound_run(indx));
+    meanMI_sound_sit(cl) = nanmean(MI_sound_sit(indx));
+    semMI_sound_run(cl) = sem(MI_sound_run(indx));
+    semMI_sound_sit(cl) = sem(MI_sound_sit(indx));
+    n_layer(cl) = sum(isnan(MI_sound_run(indx)));
+    
+    meanMI_sound_runL(cl) = nanmean(MI_sound_run_laser(indx));
+    meanMI_sound_sitL(cl) = nanmean(MI_sound_sit_laser(indx));
+    semMI_sound_runL(cl) = sem(MI_sound_run_laser(indx));
+    semMI_sound_sitL(cl) = sem(MI_sound_sit_laser(indx));
+    n_layerL(cl) = sum(isnan(MI_sound_run_laser(indx)));
+end
+
+figure; hold on
+errorbar([1:4], meanMI_sound_sit, semMI_sound_sit, 'ko-');
+errorbar([1:4], meanMI_sound_run, semMI_sound_run, 'ko--');
 xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index - Run'); title('Evoked responses')
-figure(103); subplot(2,1,2); hold on
-errorbar([1:4], meanMI1_sp, semMI1_sp, 'ko');
-errorbar([1.1:4.1], meanMI1_spLaser, semMI1_spLaser, 'bo');
-errorbar([1.2:4.2], meanMI_sp_plus, semMI_sp_plus, 'go');
-plot([0 5], [0 0], 'k--')
-legend({ 'run', 'laser' 'run + laser' })
+ylabel('Modulation Index (mean/SEM)- sound effect');
+title_string = sprintf( 'On response MI, n = %d, %d, %d, %d',  n_layer);
+title(title_string)
+legend( 'sitting', 'running')
+
+figure; hold on
+bar([1 2], [nanmean(MI_sound_sit) nanmean(MI_sound_run)])
+errorbar([1 2], [nanmean(MI_sound_sit) nanmean(MI_sound_run)], [sem(MI_sound_sit) sem(MI_sound_run)])
+xticks([1 2])
+xlim([0 3])
+xticklabels({'sitting', 'running'})
+ylabel('Mean (SEM) Sound Modulation Index')
+
+figure; hold on
+errorbar([1:4], meanMI_sound_sitL, semMI_sound_sitL, 'co-');
+errorbar([1:4], meanMI_sound_runL, semMI_sound_runL, 'co--');
 xlabel('Cortical Layer')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index - Run'); title('Spont responses')
-%pupils
-figure(104); subplot(2,1,1); hold on
-errorbar([1:4], meanMI2, semMI2, 'ko');
-errorbar([1.1:4.1], meanMI2_Laser, semMI2_Laser, 'bo');
-errorbar([1.2:4.2], meanMI2_evoked_plus, semMI2_evoked_plus, 'go');
 plot([0 5], [0 0], 'k--')
-legend({ 'pupil', 'laser' 'pupil + laser' })
-xlabel('Cortical Layer')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index - Pupil'); title('Evoked responses')
-subplot(2,1,2); hold on
-errorbar([1:4], meanMI2_sp, semMI2_sp, 'ko');
-errorbar([1.1:4.1], meanMI2_spLaser, semMI2_spLaser, 'bo');
-errorbar([1.2:4.2], meanMI2_sp_plus, semMI2_sp_plus, 'go');
-plot([0 5], [0 0], 'k--')
-legend({ 'pupil', 'laser' 'pupil + laser' }); xlabel('Cortical Layer')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index - Pupil'); title('Spont responses')
+ylabel('Modulation Index (mean/SEM)- sound effect');
+title_string = sprintf( 'On response MI, n = %d, %d, %d, %d',  n_layer);
+title(title_string)
+legend('sitting','running')
+
+% distribution scatter plot
+figure; hold on
+plot(WN1(rs1,2), WN1(rs1,1), 'ko')
+plot(WN1(fs1,2), WN1(fs1,1), 'bo')
+maxFR = max(max(WN1));
+plot([0 maxFR], [0 maxFR], 'r-')
+plot(nanmean(WN1(:,2)), nanmean(WN1(:,1)), 'ro')
+[p,h,stats] = signrank(WN1(:,1),  WN1(:,2));
+title_str = sprintf('Evoked Activity, p = %d', p);
+title(title_str)
+xlabel('FR sitting (Hz)'); ylabel('FR running (Hz)')
+pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
+
+figure; hold on;
+plot(SP1(rs1,2), SP1(rs1,1), 'ko')
+plot(SP1(fs1,2), SP1(fs1,1), 'bo')
+maxFR = max(max([SP1(:,2), SP1(:,1)]));
+plot([0 maxFR], [0 maxFR], 'r-')
+plot(nanmean(SP1(:,2)), nanmean(SP1(:,1)), 'ro')
+[p,h,stats] = signrank(SP1(:,1),  SP1(:,2));
+title_str = sprintf('Spont Activity, p = %d', p);
+title(title_str)
+xlabel('FR running (Hz)'); ylabel('FR running (Hz)')
+pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
 
 fs1 = logical(fs1); rs1 = logical(rs1);
-MI1_rs = (WN1(rs1,1) - WN1(rs1,4))./ (WN1(rs1,1) +WN1(rs1,4));
-MI2_rs = (WN1(rs1,2) - WN1(rs1,3))./ (WN1(rs1,2) +WN1(rs1,3));
-MI1_fs = (WN1(fs1,1) - WN1(fs1,4))./ (WN1(fs1,1) +WN1(fs1,4));
-MI2_fs = (WN1(fs1,2) - WN1(fs1,3))./ (WN1(fs1,2) +WN1(fs1,3));
+MI1_rs = (WN1(rs1,1) - WN1(rs1,2))./ (WN1(rs1,1) +WN1(rs1,2));
+MI1_fs = (WN1(fs1,1) - WN1(fs1,2))./ (WN1(fs1,1) +WN1(fs1,2));
 
-SP1_rs = (SP1(rs1,1) - SP1(rs1,4))./ (SP1(rs1,1) +SP1(rs1,4));
-SP2_rs = (SP1(rs1,2) - SP1(rs1,3))./ (SP1(rs1,2) +SP1(rs1,3));
-SP1_fs = (SP1(fs1,1) - SP1(fs1,4))./ (SP1(fs1,1) +SP1(fs1,4));
-SP2_fs = (SP1(fs1,2) - SP1(fs1,3))./ (SP1(fs1,2) +SP1(fs1,3));
-
-%laser VIP
-MI1_rsL = (WN1L(rs1,1) - WN1L(rs1,4))./ (WN1L(rs1,1) +WN1L(rs1,4));
-MI2_rsL = (WN1L(rs1,2) - WN1L(rs1,3))./ (WN1L(rs1,2) +WN1L(rs1,3));
-MI1_fsL = (WN1L(fs1,1) - WN1L(fs1,4))./ (WN1L(fs1,1) +WN1L(fs1,4));
-MI2_fsL = (WN1L(fs1,2) - WN1L(fs1,3))./ (WN1L(fs1,2) +WN1L(fs1,3));
-SP1_rsL = (SP1L(rs1,1) - SP1L(rs1,4))./ (SP1L(rs1,1) +SP1L(rs1,4));
-SP2_rsL = (SP1L(rs1,2) - SP1L(rs1,3))./ (SP1L(rs1,2) +SP1L(rs1,3));
-SP1_fsL = (SP1L(fs1,1) - SP1L(fs1,4))./ (SP1L(fs1,1) +SP1L(fs1,4));
-SP2_fsL = (SP1L(fs1,2) - SP1L(fs1,3))./ (SP1L(fs1,2) +SP1L(fs1,3));
-
+SP1_rs = (SP1(rs1,1) - SP1(rs1,2))./ (SP1(rs1,1) +SP1(rs1,2));
+SP1_fs = (SP1(fs1,1) - SP1(fs1,2))./ (SP1(fs1,1) +SP1(fs1,2));
 
 figure(106); hold on
-bar([0.8 1.8], [nanmean(SP1_rs) nanmean(SP2_rs)], 'BarWidth', .1)
-bar([0.9 1.9], [nanmean(MI1_rs) nanmean(MI2_rs)], 'BarWidth', .1)
+bar([0.8 1.8], [nanmean(SP1_rs) nanmean(MI1_rs)], 'BarWidth', .1)
+bar([1  2 ], [ nanmean(SP1_fs) nanmean(MI1_fs) ], 'BarWidth', .1)
 
-bar([1  2 ], [ nanmean(SP1_fs) nanmean(SP2_fs) ], 'BarWidth', .1)
-bar([1.1 2.1], [nanmean(MI1_fs) nanmean(MI2_fs)], 'BarWidth', .1)
-
-bar([2.8 3.8], [nanmean(SP1_rsL) nanmean(SP2_rsL)], 'BarWidth', .1)
-bar([2.9 3.9], [nanmean(MI1_rsL) nanmean(MI2_rsL)], 'BarWidth', .1)
-
-bar([3  4 ], [ nanmean(SP1_fsL) nanmean(SP2_fsL) ], 'BarWidth', .1)
-bar([3.1 4.1], [nanmean(MI1_fsL) nanmean(MI2_fsL)], 'BarWidth', .1)
-
-% bar([2.8 2.9 3 3.1 3.8 3.9 4 4.1] , [nanmean(SP1_rsL) nanmean(MI1_rsL) nanmean(SP1_fsL) nanmean(MI1_fsL) ...
-%     nanmean(SP2_rsL) nanmean(MI2_rsL) nanmean(SP2_fsL) nanmean(MI2_fsL)])
-
-errorbar( [0.8 0.9 1 1.1 1.8 1.9 2 2.1],[nanmean(SP1_rs) nanmean(MI1_rs) nanmean(SP1_fs) nanmean(MI1_fs)  ...
-    nanmean(SP2_rs) nanmean(MI2_rs) nanmean(SP2_fs) nanmean(MI2_fs)], ...
-    [sem(SP1_rs) sem(MI1_rs) sem(SP1_fs) sem(MI1_fs)  ...
-    sem(SP2_rs) sem(MI2_rs) sem(SP2_fs) sem(MI2_fs)])
-
-errorbar( [2.8 2.9 3 3.1 3.8 3.9 4 4.1],[nanmean(SP1_rsL) nanmean(MI1_rsL) nanmean(SP1_fsL) nanmean(MI1_fsL)  ...
-    nanmean(SP2_rsL) nanmean(MI2_rsL) nanmean(SP2_fsL) nanmean(MI2_fsL)], ...
-    [sem(SP1_rsL) sem(MI1_rsL) sem(SP1_fsL) sem(MI1_fsL)  ...
-    sem(SP2_rsL) sem(MI2_rsL) sem(SP2_fsL) sem(MI2_fsL)])
-legend({'spont rs', 'evoked rs', 'spont fs', 'evoked fs'})
-xticks([1:4])
-xticklabels({'run + laser off', 'sit + large pupil + laser off', 'run + laser on', 'sit + large pupil + laser on'})
+errorbar( [0.8 1 1.8 2],[nanmean(SP1_rs) nanmean(SP1_fs) nanmean(MI1_rs)  nanmean(MI1_fs)], ...
+    [sem(SP1_rs) sem(SP1_fs) sem(MI1_rs) sem(MI1_fs)])
+legend({'RS', 'FS'})
+xticks([1:2])
+xticklabels({'Spont run + laser off', 'Evoked run + laser off'})
 ylabel('Modulation Index')
 
-modulation_indx1_rs = (WN1L(rs1,1) -WN1(rs1,1))./(WN1L(rs1,1) + WN1(rs1,1)); %running
-modulation_indx2_rs = (WN1L(rs1,2) -WN1(rs1,2))./(WN1L(rs1,2) + WN1(rs1,2)); %large pupil + sit
-modulation_indx3_rs = (WN1L(rs1,4) -WN1(rs1,4))./(WN1L(rs1,4) + WN1(rs1,4)); %small pupil + sit
-modulation_indx1_fs = (WN1L(fs1,1) -WN1(fs1,1))./(WN1L(fs1,1) + WN1(fs1,1)); %running
-modulation_indx2_fs = (WN1L(fs1,2) -WN1(fs1,2))./(WN1L(fs1,2) + WN1(fs1,2)); %large pupil + sit
-modulation_indx3_fs = (WN1L(fs1,4) -WN1(fs1,4))./(WN1L(fs1,4) + WN1(fs1,4)); %small pupil + sit
 
-modulation_indx1_sp_rs = (SP1L(rs1,1) -SP1(rs1,1))./(SP1L(rs1,1) + SP1(rs1,1)); %running
-modulation_indx2_sp_rs = (SP1L(rs1,2) -SP1(rs1,2))./(SP1L(rs1,2) + SP1(rs1,2)); %large pupil + sit
-modulation_indx3_sp_rs = (SP1L(rs1,4) -SP1(rs1,4))./(SP1L(rs1,4) + SP1(rs1,4)); %small pupil + sit
-modulation_indx1_sp_fs = (SP1L(fs1,1) -SP1(fs1,1))./(SP1L(fs1,1) + SP1(fs1,1)); %running
-modulation_indx2_sp_fs = (SP1L(fs1,2) -SP1(fs1,2))./(SP1L(fs1,2) + SP1(fs1,2)); %large pupil + sit
-modulation_indx3_sp_fs = (SP1L(fs1,4) -SP1(fs1,3))./(SP1L(fs1,4) + SP1(fs1,4)); %small pupil + sit
+%% laser modulation
+figure; hold on
+errorbar([1.1:4.1], meanMI_sound_sit, semMI_sound_sit, 'ko-');
+errorbar([1:4], meanMI_sound_sitL, semMI_sound_sitL, 'co-');
+xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Modulation Index (mean/SEM)- sound effect');
+legend('laser off', 'laser on')
+fprintf('laer effect')
+[p, h, stats] = signrank(MI_sound_sit_laser, MI_sound_sit);
+title_string = sprintf( 'On response MI, n = %d, %d, %d, %d, laser effect, p = %d',  n_layer, p);
+title(title_string)
+set(gcf, 'PaperPositionMode', 'auto');
 
-data = [modulation_indx1_rs modulation_indx2_rs modulation_indx2_rs]; 
-cate = [ones(length(modulation_indx1_rs),1)*1 ones(length(modulation_indx2_rs),1)*2 ones(length(modulation_indx3_rs),1)*3]; 
+figure; hold on
+plot(MI_sound_sit(rs1), MI_sound_sit_laser(rs1), 'ko')
+plot(MI_sound_sit(fs1), MI_sound_sit_laser(fs1), 'bo')
+plot([-1 1], [-1 1], 'r--')
+plot([-1 1], [0 0], 'k--')
+plot( [0 0], [-1 1],'k--')
+xlabel(' Sound MI laser off')
+ylabel('Sound MI laser on')
+pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
 
-data = [];
-cate = [];
-data= [nanmean(modulation_indx3_sp_rs), nanmean(modulation_indx2_sp_rs), nanmean(modulation_indx1_sp_rs); nanmean(modulation_indx3_rs) nanmean(modulation_indx2_rs) nanmean(modulation_indx1_rs);...
-    nanmean(modulation_indx3_sp_fs) nanmean(modulation_indx2_sp_fs) nanmean(modulation_indx1_sp_fs);nanmean(modulation_indx3_fs) nanmean(modulation_indx2_fs) nanmean(modulation_indx1_fs)];
-cate = 2;
-[p,tbl] = anova2(data,cate);
+figure; 
+h1 = histogram(WN1L(:,2));
+h1.BinWidth = 3;
+hold on;
+h2 = histogram(WN1(:,2));
+h2.BinWidth = 3;
+ylabel('Number of cells')
+xlabel('Firing Rate (Hz)')
+legend('laser on', 'laser off')
+[p,h,stats] = signrank(WN1L(:,2),  WN1(:,2));
+title_str = sprintf('Evoked Activity, p = %d', p);
+title(title_str)
+
+figure; hold on;
+plot(WN1(rs1,2), WN1L(rs1,2), 'ko')
+plot(WN1(fs1,2), WN1L(fs1,2), 'bo')
+maxFR = max(max([WN1(:,2), WN1L(:,2)]));
+plot(nanmean(WN1(:,2)), nanmean(WN1L(:,2)), 'ro')
+plot([0 maxFR], [0 maxFR], 'r-')
+title(title_str)
+xlabel('FR laser off'); ylabel('FR laser on')
+pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
+
+figure; hold on;
+plot(SP1(rs1,2), SP1L(rs1,2), 'ko')
+plot(SP1(fs1,2), SP1L(fs1,2), 'bo')
+maxFR = max(max([SP1(:,2), SP1L(:,2)]));
+plot(nanmean(SP1(:,2)), nanmean(SP1L(:,2)), 'ro')
+plot([0 maxFR], [0 maxFR], 'r-')
+[p,h,stats] = signrank(SP1L(:,2),  SP1(:,2));
+title_str = sprintf('Spont Activity, p = %d', p);
+title(title_str)
+xlabel('FR laser off'); ylabel('FR laser on')
+pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
+
+figure; hold on;
+plot(MI_sound_sit(rs1), MI_sound_sit_laser(rs1), 'ko')
+plot(MI_sound_sit(fs1), MI_sound_sit_laser(fs1), 'bo')
+maxFR = max(max([MI_sound_sit, MI_sound_sit_laser]));
+plot([-1 1], [-1 1], 'r-')
+plot([-1 1], [0 0], 'k--')
+plot([0 0], [-1 1], 'k--')
+[p,h,stats] = signrank(MI_sound_sit_laser,MI_sound_sit)
+title_str = sprintf('Evoked Activity, p = %d', p);
+title(title_str)
+xlabel('sound modulation index - sit laser off');
+ylabel('sound modulation index - sit laser on')
+legend('Regular spiking', 'Narrow spiking')
+pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
+
+figure; 
+hold on;
+h2 = histogram(SP1(:,2));
+h2.BinWidth = .5;
+h1 = histogram( SP1L(:,2));
+h1.BinWidth = .5;
+ylabel('Number of cells')
+xlabel('Firing Rate (Hz)')
+legend( 'laser off','laser on')
+[p,h,stats] = signrank(SP1L(:,2),  SP1(:,2));
+title_str = sprintf('Spontaneous Activity, p = %d', p);
+title(title_str)
+
+meanMI_sound_laser = nanmean(MI_sound_sit_laser);
+semMI_sound_laser = nansem(MI_sound_sit_laser);
+
+meanMI_sound = nanmean(MI_sound_sit);
+semMI_sound = nansem(MI_sound_sit);
+
+figure;hold on;
+bar([1 2], [meanMI_sound_laser meanMI_sound])
+errorbar(1, meanMI_sound_laser, semMI_sound_laser , 'k-' );
+errorbar(2, meanMI_sound, semMI_sound , 'k-' )
+xlim([0 3]); ylabel('Modulation Index - sound')
+xticks([1 2]); xticklabels({'laser on', 'laser off'})
+title('effect off sound in laser on and off conditions')
+
+%% Linear interaction test with running MI and VIP MI
+MI1_rsL = (WN1L(rs1,2) -WN1(rs1,2))./(WN1L(rs1,2) + WN1(rs1,2)); % laser rs
+MI1_fsL = (WN1L(fs1,2) -WN1(fs1,2))./(WN1L(fs1,2) + WN1(fs1,2)); % laser fs
+
+MI1_sp_rsL = (SP1L(rs1,2) -SP1(rs1,2))./(SP1L(rs1,2) + SP1(rs1,2)); % laser
+MI1_sp_fsL = (SP1L(fs1,2) -SP1(fs1,2))./(SP1L(fs1,2) + SP1(fs1,2)); % laser
+
 % VIP effect in ech state
-figure(210); hold on
-bar([.8  1.8  2.8 ], [nanmean(modulation_indx3_sp_rs) nanmean(modulation_indx2_sp_rs) nanmean(modulation_indx1_sp_rs)], 'BarWidth', .1)
-bar([.9  1.9  2.9 ], [nanmean(modulation_indx3_sp_fs) nanmean(modulation_indx2_sp_fs) nanmean(modulation_indx1_sp_fs)], 'BarWidth', .1)
-bar([1  2  3 ], [nanmean(modulation_indx3_rs) nanmean(modulation_indx2_rs) nanmean(modulation_indx1_rs)], 'BarWidth', .1)
-bar([1.1  2.1 3.1 ], [nanmean(modulation_indx3_fs) nanmean(modulation_indx2_fs) nanmean(modulation_indx1_fs)], 'BarWidth', .1)
-
-errorbar([.8 .9 1. 1.1 1.8 1.9 2 2.1 2.8 2.9 3 3.1], [nanmean(modulation_indx3_sp_rs) nanmean(modulation_indx3_sp_fs) nanmean(modulation_indx3_rs) nanmean(modulation_indx3_fs) ...
-    nanmean(modulation_indx2_sp_rs) nanmean(modulation_indx2_sp_fs)  nanmean(modulation_indx2_rs)  nanmean(modulation_indx2_fs) ...
-    nanmean(modulation_indx1_sp_rs) nanmean(modulation_indx1_sp_fs) nanmean(modulation_indx1_rs) nanmean(modulation_indx1_fs)],...
-    [sem(modulation_indx3_sp_rs) sem(modulation_indx3_sp_fs) sem(modulation_indx3_rs) sem(modulation_indx3_fs) ...
-    sem(modulation_indx2_sp_rs) sem(modulation_indx2_sp_fs)  sem(modulation_indx2_rs)  sem(modulation_indx2_fs) ...
-    sem(modulation_indx1_sp_rs) sem(modulation_indx1_sp_fs) sem(modulation_indx1_rs) sem(modulation_indx1_fs)])
-xticks([1:3])
-xticklabels({'sit + small pupil', 'sit + large pupil', 'run'})
+figure; hold on
+bar([.8  1.8 ], [nanmean(MI1_sp_rsL) nanmean(MI1_rsL)], 'BarWidth', .1)
+bar([.9  1.9], [nanmean(MI1_sp_fsL) nanmean(MI1_fsL)], 'BarWidth', .1)
+errorbar([.8 .9 1.8 1.9], [nanmean(MI1_sp_rsL) nanmean(MI1_sp_fsL) nanmean(MI1_rsL) nanmean(MI1_fsL)],...
+    [sem(MI1_sp_rsL) sem(MI1_sp_fsL) sem(MI1_rsL) sem(MI1_fsL)])
+xticks([1:2])
+xticklabels({'spont', 'evoked'})
 ylabel('Modulation Index'); title('VIP activation')
-legend({'spont rs', 'spont fs', 'evoked rs', 'evoked fs'})
+legend({'RS', 'FS'})
 
-figure(213); all_MI=[];
+% running
+MI1 = (WN1(:,1) - WN1(:,2))./(WN1(:,1) + WN1(:,2));
+MI1_sp = (SP1(:,1) - SP1(:,2))./(SP1(:,1) + SP1(:,2));
+
+% VIP
+MI1_Laser = (WN1L(:,2) - WN1(:,2))./(WN1L(:,2) + WN1(:,2)); % laser all cells
+MI1_sp_Laser = (SP1L(:,2) - SP1(:,2))./(SP1L(:,2) + SP1(:,2)); % laser all cells
+
+% combined effect of VIP and running
+MI1_runLaser = (WN1L(:,1) - WN1(:,2))./(WN1L(:,1) + WN1(:,2));
+MI1_sp_runLaser = (SP1L(:,1) - SP1(:,2))./(SP1L(:,1) + SP1(:,2));
+
+% predicted effect
+MI1_predicted = MI1 + MI1_Laser;
+MI1_sp_predicted = MI1_sp + MI1_sp_Laser;
+
+figure; subplot(2,1,1); hold on
+plot(MI1(rs1), MI1_Laser(rs1), 'ko')
+plot(MI1(fs1), MI1_Laser(fs1), 'bo')
+plot([-1 1], [-1 1], 'r--')
+xlabel('running MI'); ylabel('VIP MI')
+[r, p] = corr(MI1,MI1_Laser, 'Type','Spearman','Rows', 'complete');
+title_string = sprintf( 'Evoked, rho = %.4f, p = %.4f', r, p);
+title(title_string)
+subplot(2,1,2); hold on
+plot(MI1_sp(rs1), MI1_sp_Laser(rs1), 'ko')
+plot(MI1_sp(fs1), MI1_sp_Laser(fs1), 'bo')
+plot([-1 1], [-1 1], 'r--')
+xlabel('running MI'); ylabel('VIP MI')
+[r, p] = corr(MI1_sp,MI1_sp_Laser, 'Type','Spearman','Rows', 'complete');
+title_string = sprintf( 'Spont, rho = %.4f, p = %.4f', r, p);
+title(title_string)
+set(gcf, 'PaperPositionMode', 'auto');
+
+% linearity analysis
+figure; subplot(2,1,1); hold on
+plot(MI1_predicted(rs1), MI1_runLaser(rs1), 'ko')
+plot(MI1_predicted(fs1), MI1_runLaser(fs1), 'bo')
+plot([0 0], [-2 2], 'k--'); plot( [-2 2], [0 0], 'k--')
+lsline
+xlabel('predicted MI'); ylabel('VIP + running MI')
+[r, p] = corr(MI1_predicted, MI1_runLaser, 'Type','Spearman','Rows', 'complete');
+title_string = sprintf( 'Evoked, rho = %.4f, p = %d', r, p);
+title(title_string)
+subplot(2,1,2); hold on
+plot(MI1_sp_predicted(rs1), MI1_sp_runLaser(rs1), 'ko')
+plot(MI1_sp_predicted(fs1), MI1_sp_runLaser(fs1), 'bo')
+plot([0 0], [-2 2], 'k--'); plot( [-2 2], [0 0], 'k--')
+lsline
+xlabel('predicted MI'); ylabel('VIP + running MI')
+[r, p] = corr(MI1_sp_predicted,MI1_sp_runLaser, 'Type','Spearman','Rows', 'complete');
+title_string = sprintf( 'Spont, rho = %.4f, p = %d', r, p);
+title(title_string)
+set(gcf, 'PaperPositionMode', 'auto');
+set(gcf, 'Position',  [260 124 902 864])
+
+
+%%  STOP HERE, THE REST IS OLD
+
+figure; all_MI=[];
 mi_cl = []; mi_sp_cl = [];
 for cl = 1:length(CL)
     layer = CL{cl};
     indx = find(depths2 >layer(1) & depths2 <layer(2));
-    fs1 = fs1(indx); fs1 = logical(fs1);
-    rs1 = rs1(indx); rs1 = logical(rs1);
     layer_indx(cl).indx = indx;
-    mi = (nanmean(WN1L(indx,:),2) - nanmean(WN1(indx,:),2))./(nanmean(WN1L(indx,:),2) + nanmean(WN1(indx,:),2));
-    mi_run = (WN1(indx,1) - WN1(indx,4))./(WN1(indx,1) + WN1(indx,4));
     
     meanMI(cl) = nanmean(mi);
     semMI(cl) = sem(mi);
@@ -619,8 +1020,6 @@ errorbar([1:4], [nanmean(WN1(layer_indx(1).indx,:)) nanmean(WN1(layer_indx(2).in
 xticks([1:4]); xticklabels({'2/3', '4' '5' '6'})
 xlabel('Cortical Layers')
 
-
-
 mi = (nanmean(WN1L(:,1:4),2) - nanmean(WN1(:,1:4),2))./(nanmean(WN1L(:,1:4),2) + nanmean(WN1(:,1:4),2));
 mi_sp = (nanmean(SP1L(:,1:4),2) - nanmean(SP1(:,1:4),2))./(nanmean(SP1L(:,1:4),2) + nanmean(SP1(:,1:4),2));
 
@@ -682,11 +1081,11 @@ layer23_indx= find(mi_cl(:,2,:,:)==1);
 layer4_indx= find(mi_cl(:,2,:,:)==2);
 layer5_indx= find(mi_cl(:,2,:,:)==3);
 layer6_indx= find(mi_cl(:,2,:,:)==4);
- plot(ones(length(mi_cl(layer23_indx)),1)*1,mi_cl(layer23_indx), 'k.')
- plot(ones(length(mi_cl(layer4_indx)),1)*2,mi_cl(layer4_indx), 'k.')
- plot(ones(length(mi_cl(layer5_indx)),1)*3,mi_cl(layer5_indx), 'k.')
-  plot(ones(length(mi_cl(layer6_indx)),1)*4,mi_cl(layer6_indx), 'k.')
-  
+plot(ones(length(mi_cl(layer23_indx)),1)*1,mi_cl(layer23_indx), 'k.')
+plot(ones(length(mi_cl(layer4_indx)),1)*2,mi_cl(layer4_indx), 'k.')
+plot(ones(length(mi_cl(layer5_indx)),1)*3,mi_cl(layer5_indx), 'k.')
+plot(ones(length(mi_cl(layer6_indx)),1)*4,mi_cl(layer6_indx), 'k.')
+
 figure(216); hold on
 subplot(2,1,1); hold on;
 plot(VIP_MI_rs_evoked, RUN_MI_rs_evoked, 'k.');
@@ -795,14 +1194,14 @@ title(sprintf('Spont, rs rho=%.4f,p=%.4f fs rho=%.4f,p=%.4f', rho_rs, p_rs, rho_
 
 
 figure; subplot(2,1,1);hold on
-plot(WN_rs_plus, WN_exp_rs, 'k.'); 
+plot(WN_rs_plus, WN_exp_rs, 'k.');
 plot(WN_fs_plus, WN_exp_fs, 'b.');
 xlabel('VIP + run'); ylabel('Expected'); lsline
 [rho_rs,p_rs]=corr(WN_rs_plus, WN_exp_rs, 'Type', 'Spearman', 'rows', 'pairwise')
 [rho_fs,p_fs]=corr(WN_fs_plus, WN_exp_fs, 'Type', 'Spearman', 'rows', 'pairwise')
 title(sprintf('Evoked, rs rho=%.4f,p=%.4f fs rho=%.4f,p=%.4f', rho_rs, p_rs, rho_fs, p_fs))
 subplot(2,1,2);hold on
-plot(SP_rs_plus, SP_exp_rs, 'k.'); 
+plot(SP_rs_plus, SP_exp_rs, 'k.');
 plot(SP_fs_plus, SP_exp_fs, 'b.');
 xlabel('VIP + run'); ylabel('Expected'); lsline
 [rho_rs,p_rs]=corr(SP_rs_plus, SP_exp_rs, 'Type', 'Spearman', 'rows', 'pairwise')
@@ -898,14 +1297,14 @@ ylabel('Modulation Index')
 [p,h,zstat] = ranksum(SP_fs_plus, SP_exp_fs);
 
 figure; subplot(2,1,1);hold on
-plot(WN_rs_plus, WN_exp_rs, 'k.'); 
+plot(WN_rs_plus, WN_exp_rs, 'k.');
 plot(WN_fs_plus, WN_exp_fs, 'b.');
 xlabel('VIP + pupil'); ylabel('Expected'); lsline
 [rho_rs,p_rs]=corr(WN_rs_plus, WN_exp_rs, 'Type', 'Spearman', 'rows', 'pairwise');
 [rho_fs,p_fs]=corr(WN_fs_plus, WN_exp_fs, 'Type', 'Spearman', 'rows', 'pairwise');
 title(sprintf('Evoked, rs rho=%.4f,p=%.4f fs rho=%.4f,p=%.4f', rho_rs, p_rs, rho_fs, p_fs))
 subplot(2,1,2);hold on
-plot(SP_rs_plus, SP_exp_rs, 'k.'); 
+plot(SP_rs_plus, SP_exp_rs, 'k.');
 plot(SP_fs_plus, SP_exp_fs, 'b.');
 xlabel('VIP + pupil'); ylabel('Expected'); lsline
 [rho_rs,p_rs]=corr(SP_rs_plus, SP_exp_rs, 'Type', 'Spearman', 'rows', 'pairwise');

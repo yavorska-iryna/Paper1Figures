@@ -67,7 +67,7 @@ for d = 1:length(DIRS)
             
             nrepsWNPM = 0; pmNON = []; pmNSustained = []; pmNOFF = [];
             spikeCountPMON =[]; spikeCountPMOFF =[];  pmWN =[]; pmNs = [];
-            nrepsSSPM = 0; pmNSS = []; pmSS =[];
+            nrepsSSPM = 0; pmNSS = []; pmSS =[]; mST_off=[]; mST_on=[];
             
             
             spikeCountPonON = []; spikeCountPoffON =[]; spikeCountPonOFF =[]; spikeCountPoffOFF =[];
@@ -135,11 +135,12 @@ for d = 1:length(DIRS)
             nrepsSS = 0;
             % single trials
             for i = 1:length(Events)
-                if Events(i).laser==laser % && Events(i).LaserOnOff == laser % comment it out during off trials
+                if Events(i).laser==laser  %&& Events(i).LaserOnOff == laser % comment it out during off trials
                     if strcmp(Events(i).type, 'whitenoise')
                         
                         nrepsWN=nrepsWN+1;
                         st = M1(nrepsWN).spiketimes;
+                        st2 = st;
                         SpikeCountWN(nrepsWN) = length(st);
                         stON = st(st> ONresponse_region(1) & st<ONresponse_region(end));
                         stSustained = st(st> Sustainedresponse_region(1) & st<Sustainedresponse_region(end));
@@ -191,6 +192,7 @@ for d = 1:length(DIRS)
                             mWNon(nrepsWNMon,:) = Nr;
                             mNson(nrepsWNMon,:) = Ns;
                             mEvokedON_on(nrepsWNMon,:) = nanmean(NON)-nanmean(Ns);
+                            mST_on = [mST_on st2];
                         elseif motion_indx(i)==0 %&& pupil_indx(i)==0;
                             nrepsWNMoff = nrepsWNMoff+1;
                             mNON_off(nrepsWNMoff,:) = NON;
@@ -201,6 +203,7 @@ for d = 1:length(DIRS)
                             mWNoff(nrepsWNMoff,:) = Nr;
                             mNsoff(nrepsWNMoff,:) = Ns;
                             mEvokedON_off(nrepsWNMoff,:) = nanmean(NON)-nanmean(Ns);
+                            mST_off = [mST_off st2];
                         end
                         
                         %pupil without motion
@@ -326,7 +329,7 @@ for d = 1:length(DIRS)
             WNdata(cc).nrepsWNPM = nrepsWNPM;
             WNdata(cc).pmNON = pmNON;
             WNdata(cc).pmNSustained = pmNSustained;
-            WNdata(cc).pmNOFF=pmNOFF;
+            WNdata(cc).pmNOFF = pmNOFF;
             WNdata(cc).spikeCountPMON = spikeCountPMON;
             WNdata(cc).spikeCountPMOFF = spikeCountPMOFF;
             WNdata(cc).pmWN = pmWN;
@@ -345,9 +348,10 @@ for d = 1:length(DIRS)
             WNdata(cc).depth = cds(c);
             WNdata(cc).WNresponse = N1;
             WNdata(cc).SSresponse = N2;
-           WNdata(cc). mEvokedON_off = mEvokedON_off;
-            WNdata(cc).mEvokedON_on = mEvokedON_on;
-
+%             WNdata(cc). mEvokedON_off = mEvokedON_off;
+%             WNdata(cc).mEvokedON_on = mEvokedON_on;
+            WNdata(cc).mST_off = mST_off;
+            WNdata(cc).mST_on = mST_on;
         end % cells
         close all
     else

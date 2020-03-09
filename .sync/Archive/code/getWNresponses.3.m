@@ -14,7 +14,7 @@ save_dir = 'C:\Users\lab\Resilio Sync\Paper1Figures\code\variables';
 ONresponse_region = [0:100];
 Sustainedresponse_region = [100:600];
 OFFresponse_region = [600:700];
-spont_region = [-300:0];
+spont_region = [-300:0]; % prior to the stimulus
 SS_region = [-25:650];
 laserStart =[]; laserWidth=[]; TR = [];
 pupil_thresholds = [.55 .55 .50 .55 .55 .55 .55 .6 .6 .6 .55 .5 .45 .35 .55 ...
@@ -67,7 +67,7 @@ for d = 1:length(DIRS)
             
             nrepsWNPM = 0; pmNON = []; pmNSustained = []; pmNOFF = [];
             spikeCountPMON =[]; spikeCountPMOFF =[];  pmWN =[]; pmNs = [];
-            nrepsSSPM = 0; pmNSS = []; pmSS =[];
+            nrepsSSPM = 0; pmNSS = []; pmSS =[]; mST_off=[]; mST_on=[];
             
             
             spikeCountPonON = []; spikeCountPoffON =[]; spikeCountPonOFF =[]; spikeCountPoffOFF =[];
@@ -96,10 +96,16 @@ for d = 1:length(DIRS)
             [NOFF, xOFF] = hist(stOFF, OFFresponse_region(1):binwidth:OFFresponse_region(end));
             
             st1 = st(st> 0 & st<600);
-            N1 = hist(st1,[0:5:600]);
+            N1 = hist(st1,[0:binwidth:600]);
+            N1 = N1./nrepsM1;
+            N1 = 1000*N1./binwidth;
+            
             st2 =  mSS.spiketimes;
             st2 = st2(st2>0 & st2<600);
-            N2 = hist(st2,[0:5:600]);
+            N2 = hist(st2,[0:binwidth:600]);
+            N2 = N2./nrepsM1;
+            N2 = 1000*N2./binwidth;
+            
             
             NON = NON./nrepsM1;
             NON = 1000*NON./binwidth;
@@ -184,6 +190,8 @@ for d = 1:length(DIRS)
                             spikeCountMonOFF(nrepsWNMon) = length(stOFF);
                             mWNon(nrepsWNMon,:) = Nr;
                             mNson(nrepsWNMon,:) = Ns;
+                            mEvokedON_on(nrepsWNMon,:) = nanmean(NON)-nanmean(Ns);
+                            mST_on = [mST_on st];
                         elseif motion_indx(i)==0 %&& pupil_indx(i)==0;
                             nrepsWNMoff = nrepsWNMoff+1;
                             mNON_off(nrepsWNMoff,:) = NON;
@@ -193,6 +201,8 @@ for d = 1:length(DIRS)
                             spikeCountMoffOFF(nrepsWNMoff) = length(stOFF);
                             mWNoff(nrepsWNMoff,:) = Nr;
                             mNsoff(nrepsWNMoff,:) = Ns;
+                            mEvokedON_off(nrepsWNMoff,:) = nanmean(NON)-nanmean(Ns);
+                            mST_off = [mST_off st];
                         end
                         
                         %pupil without motion
@@ -318,7 +328,7 @@ for d = 1:length(DIRS)
             WNdata(cc).nrepsWNPM = nrepsWNPM;
             WNdata(cc).pmNON = pmNON;
             WNdata(cc).pmNSustained = pmNSustained;
-            WNdata(cc).pmNOFF=pmNOFF;
+            WNdata(cc).pmNOFF = pmNOFF;
             WNdata(cc).spikeCountPMON = spikeCountPMON;
             WNdata(cc).spikeCountPMOFF = spikeCountPMOFF;
             WNdata(cc).pmWN = pmWN;
@@ -337,7 +347,10 @@ for d = 1:length(DIRS)
             WNdata(cc).depth = cds(c);
             WNdata(cc).WNresponse = N1;
             WNdata(cc).SSresponse = N2;
-
+%             WNdata(cc). mEvokedON_off = mEvokedON_off;
+%             WNdata(cc).mEvokedON_on = mEvokedON_on;
+            WNdata(cc).mST_off = mST_off;
+            WNdata(cc).mST_on = mST_on;
         end % cells
         close all
     else
