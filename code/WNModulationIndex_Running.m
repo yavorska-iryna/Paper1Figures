@@ -632,5 +632,8 @@ xticklabels({'sitting', 'running'})
 title('matched sample size')
 ylabel('Sound Modulation Index (Mean/Sem)')
 
-
+% data stats
+fprintf('\nN cells Sound MI sitting =%d, N running = %d \n',  sum(~isnan(MI_sound_sit)),  sum(~isnan(MI_sound_run)))
+fprintf('\nN cells WN =%d, N running = %d \n',  sum(~isnan(WN1(:,2))),  sum(~isnan(WN1(:,1))))
+fprintf('\nN cells Spont sitting =%d, N running = %d \n',  sum(~isnan(SP1(:,2))),  sum(~isnan(SP1(:,1))))
 

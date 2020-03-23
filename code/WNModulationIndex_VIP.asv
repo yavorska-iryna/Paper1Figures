@@ -823,5 +823,7 @@ set(gcf, 'Position',  [260 124 902 864])
 
 
 %%  STOP HERE, THE REST IS OLD
-
+fprintf('\nN cells Sound MI sitting laser on =%d, N laser off = %d \n',  sum(~isnan(MI_sound_sit_laser)),  sum(~isnan(MI_sound_sit)))
+fprintf('\nN cells WN laser on =%d, N sitting laser off = %d \n',  sum(~isnan(WN1L(:,2))),  sum(~isnan(WN1(:,2))))
+fprintf('\nN cells Spont sitting laser on =%d, N sitting laser off = %d \n',  sum(~isnan(SP1L(:,2))),  sum(~isnan(SP1(:,2))))
 
