@@ -286,7 +286,7 @@ modulation_indx1_spLaser = (SP1L(:,2) - SP1(:,2))./(SP1L(:,2) + SP1(:,2)); %effe
 MI_sp_plus = (SP1L(:,1) - SP1(:,2))./(SP1L(:,1) + SP1(:,2));
 MI_evoked_plus = (WN1L(:,1) - WN1(:,2))./(WN1L(:,1) + WN1(:,2));
 
-
+layers = nan(sum(evoked1),1);
 for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
@@ -294,6 +294,7 @@ for cl = 1:length(CL)
     cells2 = cells1(indx); % cells in this layer
     fs2 = fs1(indx); fs2 = logical(fs2); % fast spiking cells in this layer
     rs2 = rs1(indx); rs2 = logical(rs2); % regular spiking cells in this layer
+    layers(indx) = 1*cl;
     
     % % evoked (WN respone)
     % means
@@ -472,6 +473,18 @@ legend('running', 'sitting')
 title_str = sprintf('Evoked Activity, p = %d', p)
 title(title_str)
 
+x=WN1(:,1) - WN1(:,2);
+[p,tbl1,stats] = kruskalwallis(x, layers);
+c = multcompare(stats);
+title('Evoked FR change all cells, layers')
+[m,s]=grpstats(x,layers,{'mean','sem'});
+
+x=SP1(:,1) - SP1(:,2);
+[p,tbl1,stats] = kruskalwallis(x, layers);
+c = multcompare(stats);
+title('Spont FR change all cells, layers')
+[m,s]=grpstats(x,layers,{'mean','sem'});
+
 %%
 % sound modulation index
 MI_sound_run = (WN1(:,1) - SP1(:,1))./ (WN1(:,1) +SP1(:,1));
@@ -616,7 +629,7 @@ for i = 1:100
                 indx = randi(num_reps_sit, 1, num_reps_run); % generate indices to match running trials
                 cc = cc+1;
                 MI_sit(cc) = (nanmean(nanmean(FR_sit(indx,:))) - nanmean(nanmean(SP_sit(indx,:)))) / (nanmean(nanmean(FR_sit(indx,:))) + nanmean(nanmean(SP_sit(indx,:))));
-                MI_run(cc) = (nanmean(nanmean(FR_run)) - nanmean(nanmean(SP_run))) / (nanmean(nanmean(FR_run)) + nanmean(nanmean(SP_run)));
+                MI_run(cc) = (nanmean(nanmean(FR_run)) - nanmean(nanmean(SP_run)))/ (nanmean(nanmean(FR_run)) + nanmean(nanmean(SP_run)));
             end
         end
     end
@@ -626,7 +639,7 @@ end
 
 figure; hold on
 bar([1 2], [nanmean(MI_sit_all(:,1)) nanmean(MI_run)], 'BarWidth', .4);
-errorbar([1 2], [nanmean(MI_sit_all(:,1)) nanmean(MI_run)], [sem(MI_sit_all(:,1)) sem(MI_run)])
+errorbar([1 2], [nanmean(MI_sit_all(:,1)) nanmean(MI_run)], [nanmean(MI_sit_all(:,2)) sem(MI_run)])
 xticks([1 2])
 xticklabels({'sitting', 'running'})
 title('matched sample size')

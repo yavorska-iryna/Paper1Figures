@@ -74,6 +74,8 @@ title('Spontaneous Activity fig2b')
 soundmi_sit=(asit-bsit)./(asit+bsit);
 soundmi_run=(arun-brun)./(arun+brun);
 soundmi_run(isnan(soundmi_run))=0;
+soundmi_run(soundmi_run<0)=NaN;
+
 figure
 plot(soundmi_sit, soundmi_run, 'o')
 hold on
@@ -118,6 +120,7 @@ title('Spontaneous Activity fig3b')
 soundmi_laseroff=(alaseroff-blaseroff)./(alaseroff+blaseroff);
 soundmi_laseron=(alaseron-blaseron)./(alaseron+blaseron);
 soundmi_laseron(isnan(soundmi_laseron))=0;
+soundmi_laseron(soundmi_run<0)=NaN;
 
 figure
 plot(soundmi_laseroff, soundmi_laseron, 'o')
@@ -159,6 +162,7 @@ subplot1(1,3)
 arunlaseron= a+lasershifta+runshifta;
 brunlaseron= b+lasershiftb+runshiftb;
 soundmi_run_laseron=(arunlaseron-brunlaseron)./(arunlaseron+brunlaseron);
+soundmi_run_laseron(soundmi_run<0)=NaN;
 
 combined_effect=soundmi_run_laseron - soundmi_laseroff;
 predicted_combined_effect=running_effect + laser_effect;

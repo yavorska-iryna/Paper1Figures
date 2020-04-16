@@ -163,7 +163,6 @@ title(title_string)
 xlabel('Sound MI')
 ylabel('Number of cells')
 
-
 WN1 = meanON(evoked1,:);
 WN1L = meanONL(evoked1,:);
 %WN1 = meanWN(evoked1,:);
@@ -286,7 +285,7 @@ modulation_indx1_spLaser = (SP1L(:,2) - SP1(:,2))./(SP1L(:,2) + SP1(:,2)); %effe
 MI_sp_plus = (SP1L(:,1) - SP1(:,2))./(SP1L(:,1) + SP1(:,2));
 MI_evoked_plus = (WN1L(:,1) - WN1(:,2))./(WN1L(:,1) + WN1(:,2));
 
-
+layers1 = nan(sum(evoked1),1);
 for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
@@ -294,7 +293,7 @@ for cl = 1:length(CL)
     cells2 = cells1(indx); % cells in this layer
     fs2 = fs1(indx); fs2 = logical(fs2); % fast spiking cells in this layer
     rs2 = rs1(indx); rs2 = logical(rs2); % regular spiking cells in this layer
-    
+    layers1(indx) = 1*cl;
     % % evoked (WN respone)
     % means
     meanMI1(cl) = nanmean(modulation_indx1(indx)); % mean, laser off
@@ -525,6 +524,9 @@ MI_sound_sit = (WN1(:,2) - SP1(:,2))./ (WN1(:,2) +SP1(:,2));
 MI_sound_run_laser = (WN1L(:,1) - SP1L(:,1))./ (WN1L(:,1) +SP1L(:,1));
 MI_sound_sit_laser = (WN1L(:,2) - SP1L(:,2))./ (WN1L(:,2) +SP1L(:,2));
 MI_sound_predicted = MI_sound_sit_laser + MI_sound_run;
+
+[B,BINT,R,RINT,STATS] = regress(MI_sound_run_laser,MI_sound_predicted) 
+
 
 % indx = find(MI_sound_sit<0); 
 
@@ -824,6 +826,6 @@ set(gcf, 'Position',  [260 124 902 864])
 
 %%  STOP HERE, THE REST IS OLD
 fprintf('\nN cells Sound MI sitting laser on =%d, N laser off = %d \n',  sum(~isnan(MI_sound_sit_laser)),  sum(~isnan(MI_sound_sit)))
-fprintf('\nN cells WN =%d, N running = %d \n',  sum(~isnan(WN1L(:,2))),  sum(~isnan(WN1L(:,1))))
-fprintf('\nN cells Spont sitting =%d, N running = %d \n',  sum(~isnan(SP1L(:,2))),  sum(~isnan(SP1L(:,1))))
+fprintf('\nN cells WN laser on =%d, N sitting laser off = %d \n',  sum(~isnan(WN1L(:,2))),  sum(~isnan(WN1(:,2))))
+fprintf('\nN cells Spont sitting laser on =%d, N sitting laser off = %d \n',  sum(~isnan(SP1L(:,2))),  sum(~isnan(SP1(:,2))))
 
