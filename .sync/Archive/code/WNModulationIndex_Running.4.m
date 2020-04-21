@@ -130,22 +130,13 @@ for cc =1:length(data)
                 Rs(cc) = 1;
             end
         end
-        d = data(cc).dir;
-        try
-            runsit_reps(d,:,:,:) = [data(cc).nrepsWNMon data(cc).nrepsWNMoff data(cc).nrepsSSMon data(cc).nrepsSSMoff];
-        catch
-            runsit_reps(d,:,:,:) = [NaN NaN NaN NaN];
-        end
+        runsit_reps(d,:,:,:) = [data(1).nrepsWNMon data(1).nrepsWNMoff data(1).nrepsSSMon data(1).nrepsSSMoff];
         end
     end
     recs = [recs data(cc).dir];
     cells = [cells data(cc).cell];
 end
 
-%calculate fraction of running trials
-movement_probability = nansum(runsit_reps(:,1:2:end),2)./nansum(runsit_reps,2);
-grand_movement_probability = nanmean(movement_probability);
-[CI,BOOTSTAT] = bootci(100,{@nanmean, movement_probability}, 'type', 'per')
 allDirsM = unique(WNdirsM);
 
 % which cells to include? 1- On response, 2 - Sustained, 3-  Off response,
