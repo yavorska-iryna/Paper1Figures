@@ -835,9 +835,6 @@ fprintf('\nSound MI laser on by layer =%.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.
     nanmean(MI_sound_sit_laser(layers1==2)), sem(MI_sound_sit_laser(layers1==2)), nanmean(MI_sound_sit_laser(layers1==3)), sem(MI_sound_sit_laser(layers1==3)), nanmean(MI_sound_sit_laser(layers1==4)), sem(MI_sound_sit_laser(layers1==4)));
 
 y = [MI_sound_sit_laser; MI_sound_sit];
-g1 = [ones(length(MI_sound_sit_laser),1); ones(length(MI_sound_sit_laser),1) * 2]; % laser on / off grouping varibale
+g1 = [ones(length(MI_sound_sit_laser),1) ones(length(MI_sound_sit_laser),1) * 2]; % laser on / off grouping varibale
 g2 = [layers1; layers1]; %cortical layers grouping variable
- [p,tbl,stats] = anovan(y,{g1,g2}, 'model', 2, 'varnames', {'laser', 'layer'});
- 
- x=[MI_sound_sit_laser MI_sound_sit];
- [p,tbl,stats] = kruskalwallis(x, [g1,g2])
+ [p,tbl,stats] = anovan(y,{g1,g2}, 'model', 'interaction', 'varnames', {' });

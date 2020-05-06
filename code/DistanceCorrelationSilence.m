@@ -37,76 +37,77 @@ for d = 1:length(DIRS)
         width = total_width(maxChans1_indx);
         shank1_labels = {}; shank2_labels = {};
         
-%         for b = 1: length(binwidth)
-%             ST1 = []; ST2 = []; ST_all =[]; data =[];
-%             inc1 = 0; inc2 = 0;
-%             switch1 = find(maxChans1 > 33);
-%             if isempty(switch1)
-%                 switch1= 0;
-%             end
-%             for c = 1:length(good_cells1)
-%                 cc = cc+1;
-%                 if width(c)<.71
-%                     col = 'b';
-%                 else
-%                     col = 'k';
-%                 end
-%                 
-%                 if maxChans1(c) < 33
-%                     shank = 1;
-%                     shank1_labels = {shank1_labels num2str(maxChans1(c))};
-%                     inc1 = inc1+1;
-%                     offset = inc1;
-%                 elseif maxChans1(c) > 32
-%                     shank = 2;
-%                     shank2_labels = {shank1_labels num2str(maxChans1(c)-32)};
-%                     inc2 = inc2 +1;
-%                     offset = inc2;
-%                 end
-%                 
-%                 st1=sp.st(sp.clu == sp.cids(good_cells1(c)));
-%                 st1 = st1(st1> start & st1 < L(silence_dir_indx));
-%                 st1 = st1 - start;
-%                 l = length(st1);
-%                 
-%                 subplot(1,2,shank); hold on
-%                 [N,x] = hist(st1, 0:binwidth(b):recording_duration);
-%                 N=N/binwidth(b);
-%                 N=smooth(N,10); N = N';
-%                 N=N/max(N);
-%                 data=[data; N];
-%                 
-%                 if c == 1 || c == switch1(1) %switching to shank2
-%                     [M1,P1] = resampleTraces(N, moves_trace1, laxis1);
-%                    
-%                     if shank == 1
-%                         ST1 = [ST1 N'];
-%                     elseif shank == 2
-%                         ST2 = [ST2 N'];
-%                     end
-%                 end
-%                     
-%                     try
-%                         DC_running(d,b,1) = distcorr(ST1, M1);
-%                         
-%                     catch
-%                         DC_running(d,b,1) = NaN;
-%                     end
-%                     
-%                     try
-%                         DC_running(d,b,2) = distcorr(ST2, M1);
-%                     catch
-%                         DC_running(d,b,2) = NaN;
-%                     end
-%             end
-%         end %bin
+        for b = 1: length(binwidth)
+            ST1 = []; ST2 = []; ST_all =[]; data =[];
+            inc1 = 0; inc2 = 0;
+            switch1 = find(maxChans1 > 33);
+            if isempty(switch1)
+                switch1= 0;
+            end
+            for c = 1:length(good_cells1)
+                cc = cc+1;
+                if width(c)<.71
+                    col = 'b';
+                else
+                    col = 'k';
+                end
+                
+                if maxChans1(c) < 33
+                    shank = 1;
+                    shank1_labels = {shank1_labels num2str(maxChans1(c))};
+                    inc1 = inc1+1;
+                    offset = inc1;
+                elseif maxChans1(c) > 32
+                    shank = 2;
+                    shank2_labels = {shank1_labels num2str(maxChans1(c)-32)};
+                    inc2 = inc2 +1;
+                    offset = inc2;
+                end
+                
+                st1=sp.st(sp.clu == sp.cids(good_cells1(c)));
+                st1 = st1(st1> start & st1 < L(silence_dir_indx));
+                st1 = st1 - start;
+                l = length(st1);
+                
+                subplot(1,2,shank); hold on
+                [N,x] = hist(st1, 0:binwidth(b):recording_duration);
+                N=N/binwidth(b);
+                N=smooth(N,10); N = N';
+                N=N/max(N);
+                data=[data; N];
+                
+                if c == 1 || c == switch1(1) %switching to shank2
+                    [M1,P1] = resampleTraces(N, moves_trace1, laxis1);
+                   
+                    if shank == 1
+                        ST1 = [ST1 N'];
+                    elseif shank == 2
+                        ST2 = [ST2 N'];
+                    end
+                end
+                    M1_shuffled = Shuffle(M1);
+                    try
+                        DC_running(d,b,1) = distcorr(ST1, M1_shuffled);
+                        
+                    catch
+                        DC_running(d,b,1) = NaN;
+                    end
+                    
+                    try
+                        DC_running(d,b,2) = distcorr(ST2, M1_shuffled);
+                    catch
+                        DC_running(d,b,2) = NaN;
+                    end
+            end
+        end %bin
          mouseID(d) =  str2num(nb.mouseID);
     end %try
 end %dir
-cdVIP; save('Silence_DistanceCorr_paper.mat', 'DC_running', 'mouseID')
+cd('C:\Users\lab\Resilio Sync\Paper1Figures\code\variables'); 
+save('Silence_DistanceCorr_M1shuffled.mat', 'DC_running', 'mouseID')
 figure; hold on
 means  =  nanmean(squeeze(nanmean(DC_running))');
-SEMs = nanmean(squeeze(nansem(DC_running))');
+SEMs = nanmean(squeeze(sem(DC_running))');
 plot([1:length(means)], means, 'ko');
 errorbar([1:length(means)], means, SEMs)
 ylabel('Distance Corr')

@@ -839,5 +839,4 @@ g1 = [ones(length(MI_sound_sit_laser),1); ones(length(MI_sound_sit_laser),1) * 2
 g2 = [layers1; layers1]; %cortical layers grouping variable
  [p,tbl,stats] = anovan(y,{g1,g2}, 'model', 2, 'varnames', {'laser', 'layer'});
  
- x=[MI_sound_sit_laser MI_sound_sit];
- [p,tbl,stats] = kruskalwallis(x, [g1,g2])
+ [p,tbl,stats] = kruskalwallis([MI_sound_sit_laser MI_sound_sit],layers1)

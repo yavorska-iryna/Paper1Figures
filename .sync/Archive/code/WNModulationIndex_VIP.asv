@@ -824,20 +824,8 @@ set(gcf, 'PaperPositionMode', 'auto');
 set(gcf, 'Position',  [260 124 902 864])
 
 
-%%  print
+%%  STOP HERE, THE REST IS OLD
 fprintf('\nN cells Sound MI sitting laser on =%d, N laser off = %d \n',  sum(~isnan(MI_sound_sit_laser)),  sum(~isnan(MI_sound_sit)))
 fprintf('\nN cells WN laser on =%d, N sitting laser off = %d \n',  sum(~isnan(WN1L(:,2))),  sum(~isnan(WN1(:,2))))
 fprintf('\nN cells Spont sitting laser on =%d, N sitting laser off = %d \n',  sum(~isnan(SP1L(:,2))),  sum(~isnan(SP1(:,2))))
-fprintf('\nSound MI laser off by layer =%.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f,  \n',  nanmean(MI_sound_sit(layers1==1)), sem(MI_sound_sit(layers1==1)), ...
-    nanmean(MI_sound_sit(layers1==2)), sem(MI_sound_sit(layers1==2)), nanmean(MI_sound_sit(layers1==3)), sem(MI_sound_sit(layers1==3)), nanmean(MI_sound_sit(layers1==4)), sem(MI_sound_sit(layers1==4)));
-
-fprintf('\nSound MI laser on by layer =%.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f,  \n',  nanmean(MI_sound_sit_laser(layers1==1)), sem(MI_sound_sit_laser(layers1==1)), ...
-    nanmean(MI_sound_sit_laser(layers1==2)), sem(MI_sound_sit_laser(layers1==2)), nanmean(MI_sound_sit_laser(layers1==3)), sem(MI_sound_sit_laser(layers1==3)), nanmean(MI_sound_sit_laser(layers1==4)), sem(MI_sound_sit_laser(layers1==4)));
-
-y = [MI_sound_sit_laser; MI_sound_sit];
-g1 = [ones(length(MI_sound_sit_laser),1); ones(length(MI_sound_sit_laser),1) * 2]; % laser on / off grouping varibale
-g2 = [layers1; layers1]; %cortical layers grouping variable
- [p,tbl,stats] = anovan(y,{g1,g2}, 'model', 2, 'varnames', {'laser', 'layer'});
- 
- x=[MI_sound_sit_laser MI_sound_sit];
- [p,tbl,stats] = kruskalwallis(x, [g1,g2])
+fprintf('\nN cells Spont sitting laser on =%d, N sitting laser off = %d \n',  sum(~isnan(SP1L(:,2))),  sum(~isnan(SP1(:,2))))

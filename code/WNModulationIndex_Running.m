@@ -393,6 +393,20 @@ for cl = 1:length(CL)
     MODULATION_sp_INDX1Laser = [MODULATION_sp_INDX1Laser; modulation_indx1_spLaser(indx) ones(length(indx),1)*cl];
 end
 
+SP_change = SP1(:,1) - SP1(:,2);
+WN_change = WN1(:,1) - WN1(:,2);
+[p,tbl1,stats] = kruskalwallis(SP_change, layers);
+c = multcompare(stats);
+title('Evoked all cells, running')
+[m,s]=grpstats(SP_change, layers,{'mean','sem'})
+title('SP FR change across layers')
+
+[p,tbl1,stats] = kruskalwallis(WN_change, layers);
+c = multcompare(stats);
+title('Evoked all cells, running')
+ [m,s]=grpstats(WN_change, layers,{'mean','sem'})
+title('WN FR change across layers')
+
 % state by layer without layer
 figure; hold on; subplot(2,1,1); hold on
 errorbar([1:4], meanMI1, semMI1, 'ko-');
@@ -617,7 +631,7 @@ xticklabels({'Spont run + laser off', 'Evoked run + laser off'})
 ylabel('Modulation Index')
 
 meanMI_sound = nanmean(MI_sound_sit);
-semMI_sound = nansem(MI_sound_sit);
+semMI_sound = sem(MI_sound_sit);
 
 %% Test results on different repetitions
 
@@ -640,12 +654,17 @@ for i = 1:100
                 cc = cc+1;
                 MI_sit(cc) = (nanmean(nanmean(FR_sit(indx,:))) - nanmean(nanmean(SP_sit(indx,:)))) / (nanmean(nanmean(FR_sit(indx,:))) + nanmean(nanmean(SP_sit(indx,:))));
                 MI_run(cc) = (nanmean(nanmean(FR_run)) - nanmean(nanmean(SP_run)))/ (nanmean(nanmean(FR_run)) + nanmean(nanmean(SP_run)));
+                
             end
         end
     end
+    [P,H,STATS] = signrank(MI_run, MI_sit);
     MI_sit_all(i, 1) = nanmean(MI_sit);
     MI_sit_all(i, 2) = sem(MI_sit);
+    p_values(i) = P;
+    z_values(i) = STATS.zval;
 end
+effect_size = abs(z_values)/sqrt(length(MI_run))
 
 figure; hold on
 bar([1 2], [nanmean(MI_sit_all(:,1)) nanmean(MI_run)], 'BarWidth', .4);

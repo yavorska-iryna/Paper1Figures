@@ -727,10 +727,10 @@ legend('Regular spiking', 'Narrow spiking')
 pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
 
 meanMI_sound_laser = nanmean(MI_sound_sit_laser);
-semMI_sound_laser = nansem(MI_sound_sit_laser);
+semMI_sound_laser = sem(MI_sound_sit_laser);
 
 meanMI_sound = nanmean(MI_sound_sit);
-semMI_sound = nansem(MI_sound_sit);
+semMI_sound = sem(MI_sound_sit);
 
 figure;hold on;
 bar([1 2], [meanMI_sound_laser meanMI_sound])
