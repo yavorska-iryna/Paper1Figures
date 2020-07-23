@@ -29,7 +29,7 @@ depths = nan(length(data),1);
 fs = zeros(length(data),1);
 Rs = zeros(length(data),1);
 WNdirsM =[]; WNcellsM = 0; SSdirsM =[]; SScellsM = 0;
-recs = []; cells=[]; cell_number= nan(length(data),2);
+recs = []; cells=[]; cell_number= 1:length(data);
 
 evoked = zeros(length(data),4); zstats = zeros(length(data),4);
 color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
@@ -83,7 +83,6 @@ for cc =1:length(data)
                 meanPreStim(cc,2) = nanmean(nanmean(data(cc).mNsoff));
                 WNdirsM = [WNdirsM data(cc).dir]; % collect directory (rec#) for all recordings included in the analysis to make sure N is ok.
                 WNcellsM = WNcellsM + 1; % count number of cells included in the analysis
-                 cell_number(cc,1) = cc;
             end
             
             % WN laser on trials
@@ -94,7 +93,7 @@ for cc =1:length(data)
                 meanONL(cc,2) =nanmean([nanmean(nanmean(data1(cc).mNON_off))]);%-nanmean(nanmean(data1(cc).mNsoff));
                 meanPreStimL(cc,1) = nanmean([nanmean(nanmean(data1(cc).mNson))]);
                 meanPreStimL(cc,2) = nanmean([nanmean(nanmean(data1(cc).mNsoff))]);
-                cell_number(cc,2) = cc;
+               
             end
             
             % silent sound laser off
@@ -179,7 +178,8 @@ depths1 = depths(evoked1);
 fs1 = fs(evoked1);
 rs1 = Rs(evoked1);
 rs1 = logical(rs1); fs1 = logical(fs1);
-cell_number1 = cell_number(evoked1,:);
+cell_number1 = cell_number(:,evoked1);
+cell_number1 = cell_number1';
 
 EvokedWN = WN1;
 modulation_indx1 = (EvokedWN(:,1) - EvokedWN(:,2))./(EvokedWN(:,1) + EvokedWN(:,2));
@@ -501,6 +501,11 @@ MI_sound_run_laser = (WN1L(:,1) - SP1L(:,1))./ (WN1L(:,1) +SP1L(:,1));
 MI_sound_sit_laser = (WN1L(:,2) - SP1L(:,2))./ (WN1L(:,2) +SP1L(:,2));
 MI_sound_predicted = MI_sound_sit_laser + MI_sound_run;
 
+%find 99 cells used in this analysis, save their indices, 
+indx1 = find(~isnan(MI_sound_run_laser)==1); 
+indx2 = find(~isnan(MI_sound_predicted)==1);
+indx = intersect(indx1, indx2); 
+cell_number1 = cell_number1(indx);
 cd(variables_dir)
 save('ModulationIndices.mat', 'MI_sound_run', 'MI_sound_sit', 'MI_sound_run_laser', 'MI_sound_sit_laser', 'MI_sound_predicted')
 save('example_cells_epistatic.mat', 'cell_number1')
@@ -826,14 +831,32 @@ set(gcf, 'PaperPositionMode', 'auto');
 set(gcf, 'Position',  [260 124 902 864])
 
 % regression
-x = MI_sound_predicted;
+x1 = MI_sound_predicted;
 indx = isnan(MI_sound_predicted);
-x(indx)=[];
+x1(indx)=[];
 y = MI_sound_run_laser;
 y(indx) = [];
- [B,BINT,R,RINT,STATS] = regress(y,x) ;
+ [B,BINT,R,RINT,STATS] = regress(y,x1) ;
  
- mdl = fitlm(x,y)
+ % CONTROL
+ x2 = MI_sound_run(~indx);
+ x3 = MI_sound_sit_laser(~indx);
+ 
+ [B,BINT,R,RINT,STATS] = regress(y,x2) ;
+ [B,BINT,R,RINT,STATS] = regress(y,x3) ;
+
+ X = [x1 x2 x3 ];
+ X1 = [ x2 x3 x1 ];
+ X2 = [ x3 x2 x1 ];
+ [B,BINT,R,RINT,STATS] = regress(y,X) ;
+
+ 
+ %linear regresssion
+ mdl1 = fitlm(x1,y)
+ mdl2 = fitlm(x2,y)
+ mdl3 = fitlm(x3,y)
+ mdl123 = fitlm(X,y)
+ mdl23 = fitlm([x2 x3],y)
 
 %%  STOP HERE, THE REST IS OLD
 

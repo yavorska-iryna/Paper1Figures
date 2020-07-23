@@ -644,6 +644,7 @@ legend( 'sitting', 'running')
  c = multcompare(stats);
  title('Sound modulation index change, VIP')
  
+
 figure; hold on
 errorbar([1:4], meanMI_sound_sitL, semMI_sound_sitL, 'co-');
 errorbar([1:4], meanMI_sound_runL, semMI_sound_runL, 'co--');
@@ -673,6 +674,79 @@ legend({'RS', 'FS'})
 xticks([1:2])
 xticklabels({'Spont run + laser off', 'Evoked run + laser off'})
 ylabel('Modulation Index')
+
+
+% Plot firing rates by cortical layer to identify what drives laser effect
+H = [];
+for l = 1:4
+    FR_evoked_means_laser_off(l) = nanmean(WN1(layers1 == l,2));
+    FR_evoked_means_laser_on(l) = nanmean(WN1L(layers1 == l,2));
+    FR_spont_means_laser_off(l) = nanmean(SP1(layers1 == l,2));
+    FR_spont_means_laser_on(l) = nanmean(SP1L(layers1 == l,2));
+    
+    
+    FR_evoked_medians_laser_off(l) = nanmedian(WN1(layers1 == l,2));
+    FR_evoked_medians_laser_on(l) = nanmedian(WN1L(layers1 == l,2));
+    FR_spont_medians_laser_off(l) = nanmedian(SP1(layers1 == l,2));
+    FR_spont_medians_laser_on(l) = nanmedian(SP1L(layers1 == l,2));
+    
+    FR_evoked_sems_laser_off(l) = sem(WN1(layers1 == l,2));
+    FR_evoked_sems_laser_on(l) = sem(WN1L(layers1 == l,2));
+    FR_spont_sems_laser_off(l) = sem(SP1(layers1 == l,2));
+    FR_spont_sems_laser_on(l) = sem(SP1L(layers1 == l,2));
+    
+    % stats
+    [p,h,STATS] = signrank(WN1(layers1==l,2), WN1L(layers1==l,2));
+    if p < 0.0125
+        H(1,l) = 1.15;
+    else
+         H(1,l) = NaN;
+    end
+    
+    
+    [p,h,STATS] = signrank(SP1(layers1==l,2), SP1L(layers1==l,2));
+    if p < 0.0125
+        H(2,l) = 1.15;
+    else
+        H(2,l) = NaN;
+    end
+end
+
+figure; subplot(2,1,1); hold on
+errorbar([1:4], FR_evoked_means_laser_off, FR_evoked_sems_laser_off, 'ko-')
+errorbar([1.2:4.2], FR_evoked_means_laser_on, FR_evoked_sems_laser_on, 'co-')
+plot([1.1:4.1], max(FR_evoked_means_laser_on).*H(1,:), '*r')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Mean FR /SEM')
+title('Evoked')
+subplot(2,1,2); hold on;
+errorbar([1:4], FR_spont_means_laser_off, FR_spont_sems_laser_off, 'ko-')
+errorbar([1.2:4.2], FR_spont_means_laser_on, FR_spont_sems_laser_on, 'co-')
+plot([1.1:4.1], max(FR_spont_means_laser_on).*H(2,:), '*r')
+xticks([1:4]); xlim([0 5])
+title('Spont')
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Mean/SEM FR')
+
+figure; subplot(2,1,1); hold on
+errorbar([1:4], FR_evoked_medians_laser_off, FR_evoked_sems_laser_off, 'ko-')
+errorbar([1.2:4.2], FR_evoked_medians_laser_on, FR_evoked_sems_laser_on, 'co-')
+plot([1.1:4.1], max(FR_evoked_medians_laser_on).*H(1,:), '*r')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+title('Evoked')
+ylabel('Mean/SEM FR')
+
+subplot(2,1,2); hold on;
+errorbar([1:4], FR_spont_medians_laser_off, FR_spont_sems_laser_off, 'ko-')
+errorbar([1.2:4.2], FR_spont_medians_laser_on, FR_spont_sems_laser_on, 'co-')
+plot([1.1:4.1], max(FR_spont_medians_laser_on).*H(2,:), '*r')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+title('Spont')
+ylabel('Mean/SEM FR')
+xlabel('Cortical layers')
 
 
 %% laser modulation
@@ -767,61 +841,10 @@ xticklabels({'spont', 'evoked'})
 ylabel('Modulation Index'); title('VIP activation')
 legend({'RS', 'FS'})
 
-% running
-MI1 = (WN1(:,1) - WN1(:,2))./(WN1(:,1) + WN1(:,2));
-MI1_sp = (SP1(:,1) - SP1(:,2))./(SP1(:,1) + SP1(:,2));
-
 % VIP
 MI1_Laser = (WN1L(:,2) - WN1(:,2))./(WN1L(:,2) + WN1(:,2)); % laser all cells
 MI1_sp_Laser = (SP1L(:,2) - SP1(:,2))./(SP1L(:,2) + SP1(:,2)); % laser all cells
 
-% combined effect of VIP and running
-MI1_runLaser = (WN1L(:,1) - WN1(:,2))./(WN1L(:,1) + WN1(:,2));
-MI1_sp_runLaser = (SP1L(:,1) - SP1(:,2))./(SP1L(:,1) + SP1(:,2));
-
-% predicted effect
-MI1_predicted = MI1 + MI1_Laser;
-MI1_sp_predicted = MI1_sp + MI1_sp_Laser;
-
-figure; subplot(2,1,1); hold on
-plot(MI1(rs1), MI1_Laser(rs1), 'ko')
-plot(MI1(fs1), MI1_Laser(fs1), 'go')
-plot([-1 1], [-1 1], 'r--')
-xlabel('running MI'); ylabel('VIP MI')
-[r, p] = corr(MI1,MI1_Laser, 'Type','Spearman','Rows', 'complete');
-title_string = sprintf( 'Evoked, rho = %.4f, p = %.4f', r, p);
-title(title_string)
-subplot(2,1,2); hold on
-plot(MI1_sp(rs1), MI1_sp_Laser(rs1), 'ko')
-plot(MI1_sp(fs1), MI1_sp_Laser(fs1), 'go')
-plot([-1 1], [-1 1], 'r--')
-xlabel('running MI'); ylabel('VIP MI')
-[r, p] = corr(MI1_sp,MI1_sp_Laser, 'Type','Spearman','Rows', 'complete');
-title_string = sprintf( 'Spont, rho = %.4f, p = %.4f', r, p);
-title(title_string)
-set(gcf, 'PaperPositionMode', 'auto');
-
-% linearity analysis
-figure; subplot(2,1,1); hold on
-plot(MI1_predicted(rs1), MI1_runLaser(rs1), 'ko')
-plot(MI1_predicted(fs1), MI1_runLaser(fs1), 'go')
-plot([0 0], [-2 2], 'k--'); plot( [-2 2], [0 0], 'k--')
-lsline
-xlabel('predicted MI'); ylabel('VIP + running MI')
-[r, p] = corr(MI1_predicted, MI1_runLaser, 'Type','Spearman','Rows', 'complete');
-title_string = sprintf( 'Evoked, rho = %.4f, p = %d', r, p);
-title(title_string)
-subplot(2,1,2); hold on
-plot(MI1_sp_predicted(rs1), MI1_sp_runLaser(rs1), 'ko')
-plot(MI1_sp_predicted(fs1), MI1_sp_runLaser(fs1), 'go')
-plot([0 0], [-2 2], 'k--'); plot( [-2 2], [0 0], 'k--')
-lsline
-xlabel('predicted MI'); ylabel('VIP + running MI')
-[r, p] = corr(MI1_sp_predicted,MI1_sp_runLaser, 'Type','Spearman','Rows', 'complete');
-title_string = sprintf( 'Spont, rho = %.4f, p = %d', r, p);
-title(title_string)
-set(gcf, 'PaperPositionMode', 'auto');
-set(gcf, 'Position',  [260 124 902 864])
 
 
 %%  print

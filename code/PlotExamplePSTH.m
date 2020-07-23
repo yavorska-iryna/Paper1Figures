@@ -11,6 +11,7 @@ load('evoked_indx_epistatic.mat')
 load('example_cells_epistatic.mat')
 
 % good examples: 387, 428
+%  = 69, 74
 sigma = 10;
 for cc = 1:length(cell_number1)
     c =  cell_number1(cc);
@@ -27,7 +28,15 @@ for cc = 1:length(cell_number1)
         st = data1(c).mST_on;
         [x, running_st_laser_on] = GaussSmooth(st, sigma, [-300 900]);
         running_st_laser_on = running_st_laser_on./data1(c). nrepsWNMon;
-        predicted_trace = nanmean([running_st' sitting_st_laser_on'], 2);
+        
+        % calculate predicted response
+        running_change =  running_st -sitting_st;
+        VIP_change = sitting_st_laser_on -sitting_st ;
+        predicted_trace = sitting_st + running_change +VIP_change;
+        predicted_trace = predicted_trace';
+        predicted_trace(predicted_trace<0)=0; %set negative FR to 0
+        
+        %mean_predicted_trace = nanmean([running_st' sitting_st_laser_on'], 2);
         figure; hold on; plot(x,sitting_st,'k', 'LineWidth', 2)
         plot(x,running_st, 'k--',  'LineWidth', 2)
         plot(x,sitting_st_laser_on, 'c',  'LineWidth', 2)
@@ -37,8 +46,8 @@ for cc = 1:length(cell_number1)
         plot([-50 -50], [-10 150], 'c--')
         plot([-50 750], [-10 -10], ' c' , 'LineWidth', 7)
         plot([0 600], [-5 -5], ' m',  'LineWidth', 7)
-        legend(' sitting laser off', ' running laser off', ' sitting laser on', ' running laser on', ' predicted')
+        legend(' sitting laser off', ' running laser off', ' sitting laser on', ' running laser on', ' predicted response' )
         ylabel('Firing Rate (Hz)'); xlabel('time (ms)')
-        xlim([-100 200]); ylim([-11 200])
+        xlim([-60 120]); ylim([-11 100])
     end
 end

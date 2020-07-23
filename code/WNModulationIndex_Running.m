@@ -393,6 +393,78 @@ for cl = 1:length(CL)
     MODULATION_sp_INDX1Laser = [MODULATION_sp_INDX1Laser; modulation_indx1_spLaser(indx) ones(length(indx),1)*cl];
 end
 
+% Plot firing rates by cortical layer to identify what drives laser effect
+H = [];
+for l = 1:4
+    FR_evoked_means_sitting(l) = nanmean(WN1(layers == l,2));
+    FR_evoked_means_running(l) = nanmean(WN1(layers == l,1));
+    FR_spont_means_sitting(l) = nanmean(SP1(layers == l,2));
+    FR_spont_means_running(l) = nanmean(SP1(layers == l,1));
+    
+    
+    FR_evoked_medians_sitting(l) = nanmedian(WN1(layers == l,2));
+    FR_evoked_medians_running(l) = nanmedian(WN1(layers == l,1));
+    FR_spont_medians_sitting(l) = nanmedian(SP1(layers == l,2));
+    FR_spont_medians_running(l) = nanmedian(SP1(layers == l,1));
+    
+    FR_evoked_sems_sitting(l) = sem(WN1(layers == l,2));
+    FR_evoked_sems_running(l) = sem(WN1(layers == l,1));
+    FR_spont_sems_sitting(l) = sem(SP1(layers == l,2));
+    FR_spont_sems_running(l) = sem(SP1(layers == l,1));
+    
+    % stats
+    [p,h,STATS] = signrank(WN1(layers==l,2), WN1(layers==l,1));
+    if p < 0.0125
+        H(1,l) = 1.15;
+    else
+         H(1,l) = NaN;
+    end
+    
+    [p,h,STATS] = signrank(SP1(layers==l,2), SP1(layers==l,1));
+    if p < 0.0125
+        H(2,l) = 1.15;
+    else
+        H(2,l) = NaN;
+    end
+end
+
+figure; subplot(2,1,1); hold on
+errorbar([1:4], FR_evoked_means_sitting, FR_evoked_sems_sitting, 'ko-')
+errorbar([1.2:4.2], FR_evoked_means_running, FR_evoked_sems_running, 'ko--')
+plot([1.1:4.1], max(FR_evoked_means_laser_on).*H(1,:), '*r')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Mean FR /SEM')
+title('Evoked')
+subplot(2,1,2); hold on;
+errorbar([1:4], FR_spont_means_sitting, FR_spont_sems_sitting, 'ko-')
+errorbar([1.2:4.2], FR_spont_means_running, FR_spont_sems_running, 'ko--')
+plot([1.1:4.1], max(FR_spont_means_running).*H(2,:), '*r')
+xticks([1:4]); xlim([0 5])
+title('Spont')
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Mean/SEM FR')
+
+figure; subplot(2,1,1); hold on
+errorbar([1:4], FR_evoked_medians_sitting, FR_evoked_sems_sitting, 'ko-')
+errorbar([1.2:4.2], FR_evoked_medians_running, FR_evoked_sems_running, 'ko--')
+plot([1.1:4.1], max(FR_evoked_medians_sitting).*H(1,:), '*r')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+title('Evoked')
+ylabel('Median/SEM FR')
+
+subplot(2,1,2); hold on;
+errorbar([1:4], FR_spont_medians_sitting, FR_spont_sems_sitting, 'ko-')
+errorbar([1.2:4.2], FR_spont_medians_running, FR_spont_sems_running, 'ko--')
+plot([1.1:4.1], max(FR_spont_medians_running).*H(2,:), '*r')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+title('Spont')
+ylabel('Median/SEM FR')
+xlabel('Cortical layers')
+
+% stats
 SP_change = SP1(:,1) - SP1(:,2);
 WN_change = WN1(:,1) - WN1(:,2);
 [p,tbl1,stats] = kruskalwallis(SP_change, layers);
