@@ -1,4 +1,4 @@
-% compute modulation index WN responses. last editted 01.21.2020 ira
+ % compute modulation index WN responses. last editted 01.21.2020 ira
 % variables gethered with getWNresponses.m
 
 % three states: sit + small pupil, sit + large pupil, running  + large
@@ -393,7 +393,7 @@ for cl = 1:length(CL)
     MODULATION_sp_INDX1Laser = [MODULATION_sp_INDX1Laser; modulation_indx1_spLaser(indx) ones(length(indx),1)*cl];
 end
 
-% Plot firing rates by cortical layer to identify what drives laser effect
+% Plot firing rates by cortical layer to identify what drives running effect
 H = [];
 for l = 1:4
     FR_evoked_means_sitting(l) = nanmean(WN1(layers == l,2));
@@ -431,7 +431,7 @@ end
 figure; subplot(2,1,1); hold on
 errorbar([1:4], FR_evoked_means_sitting, FR_evoked_sems_sitting, 'ko-')
 errorbar([1.2:4.2], FR_evoked_means_running, FR_evoked_sems_running, 'ko--')
-plot([1.1:4.1], max(FR_evoked_means_laser_on).*H(1,:), '*r')
+plot([1.1:4.1], max(FR_evoked_means_running).*H(1,:), '*r')
 xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
 ylabel('Mean FR /SEM')
@@ -630,6 +630,9 @@ for cl = 1:length(CL)
     semMI_sound_run(cl) = sem(MI_sound_run(indx));
     semMI_sound_sit(cl) = sem(MI_sound_sit(indx));
     n_layer(cl) = sum(~isnan(MI_sound_run(indx)));
+    
+    [p,h,STATS] = signrank(MI_sound_run(indx), MI_sound_sit(indx));
+    fprintf('\n Layer %d , signedrank = %d, p = %d\n', cl, STATS.signedrank, p)
     
     meanMI_sound_runL(cl) = nanmean(MI_sound_run_laser(indx));
     meanMI_sound_sitL(cl) = nanmean(MI_sound_sit_laser(indx));
