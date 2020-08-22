@@ -1,11 +1,13 @@
-  % compute modulation index WN responses. last editted 01.21.2020 ira
+% compute sound modulation index of WN responses
+% VIP effect only (dirs = 1:30 )
+
 % variables gethered with getWNresponses.m
 
 % three states: sit + small pupil, sit + large pupil, running  + large
 %
 
 clear; close all; dbstop if error
-variables_dir = 'C:\Users\lab\Resilio Sync\Paper1Figures\code\variables';
+variables_dir = 'C:\Users\lab\Documents\GitHub\Paper1Figures\code\variables';
 
 cd(variables_dir);
 load('WNdataLaserOFF.mat'); % 'WNdataLaserOFF.mat (OFF1 -  longer responses), dynamic pupil threshold, but varified.
@@ -13,7 +15,6 @@ data = WNdataLaserOFF;
 load('WNdataLaserON.mat');
 data1 = WNdataLaserON;
 load('CellsQualityStats.mat')
-load ('C:\Users\lab\Resilio Sync\Paper1Figures\code\colorblind_colormap.mat'); % use color blind friendly colors
 sit_color = 4;
 run_color = 2;
 laser_color = 11;
@@ -39,17 +40,27 @@ color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
 nreps_check_running = -1; %number of repetitions in each condition for comparison
 CL = {[0 301], [300 401], [400 601], [600 2000]}; id =0;
 
-cdVIP; load('Silence_DistanceCorr_dirs.mat'); load('WNdirsVIP.mat')
+cdVIP; load('Silence_DistanceCorr_dirs.mat'); 
+cdPV;  load('allPINPdirs.mat') % load all 45 dirs
+PINPdirs = PINPDIRS;
 
-% collect waveform, SNR, and uQ from cells. Must match length of data. 
-WFs = []; SNRs = []; uQs = [];
-for d = 1:length(WNdirs)
-    [WF, SNR, uQ] = getCellsInfo(WNdirs{d});
-    WFs = [WFs; WF];
-    SNRs = [SNRs; SNR];
-    uQs = [uQs; uQ];
+% collect waveform, SNR, and uQ from cells. Must match length of data.
+try
+    cd(variables_dir)
+    load('CellsInfo.mat')
+catch
+    WFs = []; SNRs = []; uQs = [];
+    for d = 1:length(PINPdirs)
+        if ~isempty (PINPdirs{d})
+            [WF, SNR, uQ] = getCellsInfo(PINPdirs{d});
+            WFs = [WFs; WF];
+            SNRs = [SNRs; SNR];
+            uQs = [uQs; uQ];
+        end
+    end
+    cd(variables_dir)
+    save('CellsInfo.mat', 'WFs','SNRs','uQs')
 end
-
 
 for cc =1:length(data)
     if data(cc).dir < 30
@@ -146,7 +157,7 @@ for cc =1:length(data)
             
             if cc == 1 || recs(cc) - recs(cc-1) ~= 0
                 id = id +1;
-                cd(WNdirs{recs(cc)})
+                cd(PINPdirs{recs(cc)})
                 load('notebook.mat')
                 if strcmp(nb.mouseID, '') == 0
                     mouse_ID{id} = nb.mouseID;
@@ -254,8 +265,6 @@ r = stats.zval/sqrt(sum(~isnan(WN1L(:,2)))+sum(~isnan(WN1(:,2)))); %z / sqrt(N)
 title_str = sprintf('Evoked Activity, p = %d, r = %.4f', p, r)
 title(title_str)
 
-
-
 figure; hold on;
 plot(WN1(rs1,2), WN1L(rs1,2), 'ko')
 plot(WN1(fs1,2), WN1L(fs1,2), 'go')
@@ -282,6 +291,42 @@ title(title_str)
 legend('Regular spiking', 'Narrow spiking', 'Mean', 'Median')
 xlabel('FR laser off'); ylabel('FR laser on')
 pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot waveforms of cells
+WFs1 = WFs(evoked1,:); %subset evoeked cells only that were used in the analysis
+SNRs1 = SNRs(evoked1,:);
+uQs1 = uQs(evoked1,:);
+figure; hold on
+
+x = 1:size(WFs1,2);
+y = WFs1(rs1,:);
+N = size(y,1);                                      % Number of ?Experiments? In Data Set
+yMean = mean(y);                                    % Mean Of All Experiments At Each Value Of ?x?
+ySEM = std(y)/sqrt(N);                              % Compute ?Standard Error Of The Mean? Of All Experiments At Each Value Of ?x?
+CI95 = tinv([0.025 0.975], N-1);                    % Calculate 95% Probability Intervals Of t-Distribution
+yCI95 = bsxfun(@times, ySEM, CI95(:));              % Calculate 95% Confidence Intervals Of All Experiments At Each Value Of ?x?
+
+plot(x, yCI95+yMean, 'Color', [0.7 0.7 0.7]) 
+plot(x, yMean, 'k', 'LineWidth', 4)                                      % Plot Mean WF Of RS cells
+
+y = WFs1(fs1,:);
+N = size(y,1);                                      
+yMean = mean(y);                                    
+ySEM = std(y)/sqrt(N);                              
+CI95 = tinv([0.025 0.975], N-1);                    
+yCI95 = bsxfun(@times, ySEM, CI95(:));              
+           
+plot(x, yCI95+yMean, 'Color', 'g') 
+plot(x, yMean, 'g', 'LineWidth', 4)    % Plot Mean WF Of RS cells
+
+xticks([0 30 60 90 120]);
+xticklabels({'0', '1', '2', '3', '4'})
+xlim([0 100])
+xlabel('time (ms)')
+ylabel('normalized spike amplitude')
+ legend('','','mean RS waveform', '','','mean NS waveform')
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Test if VIP activation is the same across all recordings and across regular and fast spiking cells
 
@@ -668,6 +713,12 @@ fs_layer4_index =  layer4_index(fs1(layer4_index));
 recs_layer4_index = recs1(fs_layer4_index);
 cells_layer4_index = cells1(fs_layer4_index);
 
+figure; hold on
+for i = 1:length(recs_layer4_index)
+    plot(WFs1(fs_layer4_index(i),:)')
+    title(sprintf('uQ = %.4f, SNR = %.4f', uQs1(fs_layer4_index(i)), SNRs1(fs_layer4_index(i))))
+end
+
 % plot FR across layers
 figure; subplot(2,1,1); hold on
 errorbar([1:4], FR_evoked_means_laser_off, FR_evoked_sems_laser_off, 'ko-')
@@ -938,6 +989,30 @@ ylabel('difference in sound MI (laser on - laser off)')
 [p,tbl1,stats] = kruskalwallis(LaserDiffs(:,1), LaserDiffs(:,2));
 c = multcompare(stats);
 title('Difference in sound MI by layer')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Are any effects correlated with cluster quality?
+figure; hold on
+plot(MI_sound_sit, uQs1, 'ko')
+[rho, p]=corr(MI_sound_sit, uQs1, 'Type', 'Spearman', 'rows', 'pairwise');
+title_str = sprintf('rs rho = %.2f, p=%.4f', rho, p);
+title(title_str)
+ylabel('uQ'); xlabel('Sound MI')
+
+figure; hold on
+plot(MI_sound_sit_laser - MI_sound_sit, uQs1, 'ko')
+[rho, p]=corr(MI_sound_sit_laser - MI_sound_sit, uQs1, 'Type', 'Spearman', 'rows', 'pairwise');
+title_str = sprintf('rs rho = %.2f, p=%.4f', rho, p);
+title(title_str)
+ylabel('uQ'); xlabel('Sound MI laser - Sound MI')
+
+figure; hold on
+plot(MI_sound_sit_laser - MI_sound_sit, SNRs1, 'ko')
+[rho, p]=corr(MI_sound_sit_laser - MI_sound_sit, SNRs1, 'Type', 'Spearman', 'rows', 'pairwise');
+title_str = sprintf('rs rho = %.2f, p=%.4f', rho, p);
+title(title_str)
+ylabel('SNR'); xlabel('Sound MI laser - Sound MI')
+
 
 %% Linear interaction test with running MI and VIP MI
 % This is not going to be very accurate because we do not control number of
