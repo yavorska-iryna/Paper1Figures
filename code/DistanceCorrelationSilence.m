@@ -5,7 +5,7 @@ load('E:\djmaus-data\iraira\VIP_analysis\variables\SilencedirsVIP.mat')
 DIRS=silence;
 load('E:\djmaus-data\iraira\PV_analysis\variables\PVSilence.mat')
 DIRS=[DIRS silence];
-binwidth = [.05 0.1 .2 .4 .8 1.6 5 10 20 40];
+binwidth = [.05 0.1 .2 .4 .8 1.6 3.2 6.4 12.8]; % bins
 
 cc = 0; %total cell counter
 for d = 1:length(DIRS)
@@ -85,17 +85,21 @@ for d = 1:length(DIRS)
                         ST2 = [ST2 N'];
                     end
                 end
-                    M1_shuffled = Shuffle(M1);
+                   M1_shuffled = Shuffle(M1);
                     try
-                        DC_running(d,b,1) = distcorr(ST1, M1_shuffled);
-                        
+                        DC_running_shuffled(d,b,1) = distcorr(ST1, M1_shuffled);
+                        DC_running(d,b,1) = distcorr(ST1, M1);
                     catch
+                        DC_running_shuffled(d,b,1) = NaN;
                         DC_running(d,b,1) = NaN;
                     end
                     
                     try
-                        DC_running(d,b,2) = distcorr(ST2, M1_shuffled);
+                        DC_running_shuffled(d,b,2) = distcorr(ST2, M1_shuffled);
+                        DC_running(d,b,2) = distcorr(ST2, M1);
+
                     catch
+                        DC_running_shuffled(d,b,2) = NaN;
                         DC_running(d,b,2) = NaN;
                     end
             end
@@ -104,28 +108,18 @@ for d = 1:length(DIRS)
     end %try
 end %dir
 cd('C:\Users\lab\Resilio Sync\Paper1Figures\code\variables'); 
-save('Silence_DistanceCorr_M1shuffled.mat', 'DC_running', 'mouseID')
+save('Silence_DistanceCorr_final.mat', 'DC_running', 'DC_running_shuffled','mouseID')
+DistCorr = DC_running - DC_running_shuffled;
 figure; hold on
-means  =  nanmean(squeeze(nanmean(DC_running))');
-SEMs = nanmean(squeeze(sem(DC_running))');
-plot([1:length(means)], means, 'ko');
-errorbar([1:length(means)], means, SEMs)
+means  =  nanmean(squeeze(nanmean(DistCorr))');
+SEMs = sem(nanmean(DistCorr,3));
+errorbar([1:length(means)], means, SEMs, 'ko-')
 ylabel('Distance Corr')
 xlabel('bin time (sec)')
 for i = 1:length(binwidth)
-time_labels{i} = num2str(binwidth(i));
+    time_labels{i} = num2str(binwidth(i));
 end
 xticklabels(time_labels)
 xlim([0 length(means)+1])
 
-figure; hold on
-stds = nanmean(squeeze(nanstd(DC_running))');
-plot([1:length(means)], means./stds, 'ko');
-ylabel('Coefficient of variation')
-xlabel('bin time (sec)')
-for i = 1:length(binwidth)
-time_labels{i} = num2str(binwidth(i));
-end
-xticklabels(time_labels)
-xlim([0 length(means)+1])
 
