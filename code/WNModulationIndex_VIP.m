@@ -398,7 +398,7 @@ LaserEffect_spont = (SP1L(:,2) - SP1(:,2))./(SP1L(:,2) + SP1(:,2)); % Laser effe
 
 for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
-    indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
+    indx = find(depths1 > layer(1) & depths1 <layer(2)); % indices of cells within this layer
     recs2 = recs1(indx); % recordings in this layer
     cells2 = cells1(indx); % cells in this layer
     fs2 = fs1(indx); fs2 = logical(fs2); % fast spiking cells in this layer
@@ -465,6 +465,14 @@ x = LASER_EFFECT_SPONT(:,1); % effect
 y = LASER_EFFECT_SPONT(:,2); % layer
 [p,tbl1,stats] = kruskalwallis(x, y);
 title('Laser Effect by layer, Spont')
+c = multcompare(stats);
+title('Laser Effect by layer, Spont')
+
+
+x = LASER_EFFECT_SPONT(rs1,1); % effect 
+y = LASER_EFFECT_SPONT(rs1,2); % layer
+[p,tbl1,stats] = kruskalwallis(x, y);
+title('Laser Effect by layer RS, Spont')
 c = multcompare(stats);
 title('Laser Effect by layer, Spont')
 
