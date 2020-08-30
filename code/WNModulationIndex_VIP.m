@@ -301,11 +301,11 @@ figure; hold on
 
 x = 1:size(WFs1,2);
 y = WFs1(rs1,:);
-N = size(y,1);                                      % Number of ?Experiments? In Data Set
-yMean = mean(y);                                    % Mean Of All Experiments At Each Value Of ?x?
-ySEM = std(y)/sqrt(N);                              % Compute ?Standard Error Of The Mean? Of All Experiments At Each Value Of ?x?
+N = size(y,1);                                      % Number of ‘Experiments’ In Data Set
+yMean = mean(y);                                    % Mean Of All Experiments At Each Value Of ‘x’
+ySEM = std(y)/sqrt(N);                              % Compute ‘Standard Error Of The Mean’ Of All Experiments At Each Value Of ‘x’
 CI95 = tinv([0.025 0.975], N-1);                    % Calculate 95% Probability Intervals Of t-Distribution
-yCI95 = bsxfun(@times, ySEM, CI95(:));              % Calculate 95% Confidence Intervals Of All Experiments At Each Value Of ?x?
+yCI95 = bsxfun(@times, ySEM, CI95(:));              % Calculate 95% Confidence Intervals Of All Experiments At Each Value Of ‘x’
 
 plot(x, yCI95+yMean, 'Color', [0.7 0.7 0.7]) 
 plot(x, yMean, 'k', 'LineWidth', 4)                                      % Plot Mean WF Of RS cells
