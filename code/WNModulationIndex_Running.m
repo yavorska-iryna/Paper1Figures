@@ -1,11 +1,13 @@
- % compute modulation index WN responses. last editted 01.21.2020 ira
+ % compute sound modulation index WN responses, 
+ % effect of running only
+ 
 % variables gethered with getWNresponses.m
 
 % three states: sit + small pupil, sit + large pupil, running  + large
-%
+
 
 clear; close all; dbstop if error
-variables_dir = 'C:\Users\lab\Resilio Sync\Paper1Figures\code\variables';
+variables_dir = 'C:\Users\lab\Documents\GitHub\Paper1Figures\code\variables';
 
 cd(variables_dir);
 load('WNdataLaserOFF.mat'); % 'WNdataLaserOFF.mat (OFF1 -  longer responses), dynamic pupil threshold, but varified.
@@ -13,10 +15,6 @@ data = WNdataLaserOFF;
 load('WNdataLaserON.mat');
 data1 = WNdataLaserON;
 load('CellsQualityStats.mat')
-load ('C:\Users\lab\Resilio Sync\Paper1Figures\code\colorblind_colormap.mat'); % use color blind friendly colors
-sit_color = 4;
-run_color = 2;
-laser_color = 11;
 
 maxFRall =[];
 SP = nan(length(data),2);
@@ -32,20 +30,40 @@ depths = nan(length(data),1);
 fs = zeros(length(data),1);
 Rs = zeros(length(data),1);
 WNdirsM =[]; WNcellsM = 0; SSdirsM =[]; SScellsM = 0;
-recs = []; cells=[];
+recs = []; cells=[]; mouse_ID = {};
 
 evoked = zeros(length(data),4); zstats = zeros(length(data),4);
 color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
 nreps_check_running = 6; %number of repetitions in each condition for comparison
-CL = {[0 301], [300 401], [400 601], [600 2000]};
+CL = {[0 301], [300 401], [400 601], [600 2000]}; id = 0;
 
 cdVIP; load('Silence_DistanceCorr_dirs.mat')
+cdPV;  load('allPINPdirs.mat') % load all 45 dirs
+PINPdirs = PINPDIRS;
+
+% collect waveform, SNR, and uQ from cells. Must match length of data.
+try
+    cd(variables_dir)
+    load('CellsInfo.mat')
+catch
+    WFs = []; SNRs = []; uQs = [];
+    for d = 1:length(PINPdirs)
+        if ~isempty (PINPdirs{d})
+            [WF, SNR, uQ] = getCellsInfo(PINPdirs{d});
+            WFs = [WFs; WF];
+            SNRs = [SNRs; SNR];
+            uQs = [uQs; uQ];
+        end
+    end
+    cd(variables_dir)
+    save('CellsInfo.mat', 'WFs','SNRs','uQs')
+end
 
 for cc =1:length(data)
     if data(cc).dir < 47
-        if data(cc).dir~=33 && data(cc).dir~=0 % ecluding putlier recordings
+        if data(cc).dir~=33 && data(cc).dir~=0 % excluding putlier recordings
         try
-            meanSpikeCount = nanmean([data(cc).SpikeCountWN data1(cc).SpikeCountWN ]); %data(cc).SpikeCountSS data1(cc).SpikeCountSS
+            meanSpikeCount = nanmean([data(cc).SpikeCountWN data1(cc).SpikeCountWN ]); 
         catch
             meanSpikeCount = NaN;
         end
@@ -141,38 +159,31 @@ for cc =1:length(data)
     recs = [recs data(cc).dir];
     cells = [cells data(cc).cell];
 end
+%% ANALYSIS %%
+% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %calculate fraction of running trials
 movement_probability = nansum(runsit_reps(:,1:2:end),2)./nansum(runsit_reps,2);
 grand_movement_probability = nanmean(movement_probability);
-[CI,BOOTSTAT] = bootci(100,{@nanmean, movement_probability}, 'type', 'per')
+[CI,BOOTSTAT] = bootci(100,{@nanmean, movement_probability}, 'type', 'per');
 allDirsM = unique(WNdirsM);
 
 % which cells to include? 1- On response, 2 - Sustained, 3-  Off response,
 % 4 - full 600 ms. zstats > 0 activated, <0 suppressed
-% 
+
 evoked1 = logical(evoked(:,1) & zstats(:,1)>0); 
 
-%evoked1 = logical(ones(length(evoked),1));
-
-responses =  (meanON - SP)./(meanON+SP);
-figure; hist(responses)
+responses_sit =  meanON(:,2) - SP(:,2);
+responses_run =  meanON(:,1) - SP(:,1);
+figure; hold on;
+hist([responses_sit(evoked1) responses_run(evoked1)], 20)
 legend('running', 'sitting')
-[p, h, stats]= signrank(responses(:,1), responses(:,2));
-title_string = sprintf( 'Sound Modulation Index all cells On responses z = %.2f, p = %d', stats.zval, p);
+[p, h, stats]= signrank(responses_run, responses_sit);
+title_string = sprintf( 'Sound responses (evoked - spont) z = %.2f, p = %d', stats.zval, p);
 title(title_string)
-xlabel('Sound MI')
+xlabel('Sound responses, FR (Hz)')
+legend('sit', 'run')
 ylabel('Number of cells')
-
-responses =  (meanWN - SP)./(meanWN+SP);
-figure; hist(responses)
-legend('running', 'sitting')
-[p, h, stats]= signrank(responses(:,1), responses(:,2));
-title_string = sprintf( 'Sound Modulation Index all cells Full responses z = %.2f, p = %d', stats.zval, p);
-title(title_string)
-xlabel('Sound MI')
-ylabel('Number of cells')
-
 
 WN1 = meanON(evoked1,:);
 WN1L = meanONL(evoked1,:);
@@ -205,18 +216,62 @@ modulation_indx1_fsL = (WN1L(fs1,1) -WN1L(fs1,2))./(WN1L(fs1,1) + WN1L(fs1,2)); 
 modulation_indx1_sp_rsL = (SP1L(rs1,1) -SP1L(rs1,2))./(SP1L(rs1,1) + SP1L(rs1,2)); %running
 modulation_indx1_sp_fsL = (SP1L(fs1,1) -SP1L(fs1,2))./(SP1L(fs1,1) + SP1L(fs1,2)); %running
 
-% subtract spontaneous activity from evoked
-indx = find(WN1(:,2)< meanPreStim1(:,2));
-indx1 = find(WN1(:,1) < meanPreStim1(:,1));
-WN2 = WN1 - meanPreStim1; WN2L = WN1L - meanPreStim1L;
-WN2(indx,:) = NaN; WN2(indx1,:) = NaN;
-%WN2 = WN1 - meanSilentSound1; WN2L = WN1L - meanPreStim1L;
-modulation_indx2 = (WN2(:,1) -WN2(:,2))./(WN2(:,1) + WN2(:,2));
-modulation_indx2L = (WN2L(:,1) -WN2L(:,2))./(WN2L(:,1) + WN2L(:,2));
+% check running effects on raw FR in RS and FS cells, evoked and spont;
+evokedChange = WN1(:,1) - WN1(:,2);
+spontChange = SP1(:,1) - SP1(:,2);
+[p, h, stats]= ranksum(evokedChange(rs1), evokedChange(fs1));
+N = sum(~isnan(evokedChange));
+r = stats.zval/sqrt(N);
+fprintf('\n Mean+/-SEM RS = %.4f +/- %.4f, NS = %.4f +/- %.4f', nanmean(evokedChange(rs1)), sem(evokedChange(rs1)), ...
+    nanmean(evokedChange(fs1)), sem(evokedChange(fs1)))
+fprintf('\n Evoked Change FR between RS and FS: z= %.4f, p = %d, r = %.4f', stats.zval, p, r)
 
+[p, h, stats]= ranksum(spontChange(rs1), spontChange(fs1));
+N = sum(~isnan(spontChange));
+r = stats.zval/sqrt(N);
+fprintf('\n Mean+/-SEM RS = %.4f +/- %.4f, NS = %.4f +/- %.4f', nanmean(spontChange(rs1)),sem(spontChange(rs1)), ...
+    nanmean(spontChange(fs1)), sem(spontChange(fs1)))
+fprintf('\n Spont Change FR between RS and FS: z= %.4f, p = %d, r = %.4f', stats.zval, p, r)
+
+depth1 = depths(evoked1);
+layer1 = nan(length(depth1),1);
+for l = 1:length(CL)
+    layer = CL{l};
+    for d = 1:length(depth1)
+        if depth1(d) > layer(1) & depth1(d) < layer(2)
+            layer1(d) = l;
+        end
+    end
+end
+
+% change in FR all cells across layer
+[p,tbl1,stats] = kruskalwallis(spontChange, layer1);
+c = multcompare(stats);
+title('Spont all cells, running FR change')
+x=modulation_indx1_rs;
+[p,tbl1,stats] = kruskalwallis(evokedChange, layer1);
+c = multcompare(stats);
+title('Evoked all cells, running FR change')
+
+% change in FR RS cells
+[p,tbl1,stats] = kruskalwallis(spontChange(rs1), layer1(rs1));
+c = multcompare(stats);
+title('Spont RS, running FR change')
+x=modulation_indx1_rs;
+[p,tbl1,stats] = kruskalwallis(evokedChange(rs1), layer1(rs1));
+c = multcompare(stats);
+title('Evoked RS, running FR change')
+
+% change in FR FS cells
+[p,tbl1,stats] = kruskalwallis(spontChange(fs1), layer1(fs1));
+c = multcompare(stats);
+title('Spont FS, running FR change')
+x=modulation_indx1_rs;
+[p,tbl1,stats] = kruskalwallis(evokedChange(fs1), layer1(fs1));
+c = multcompare(stats);
+title('Evoked FS, running FR change')
 
 %% plot the results
-
 figure; hold on
 bar([1 2], [nanmean(modulation_indx1_sp) nanmean(modulation_indx1)], 'BarWidth', .4)
 xticks([1:2])

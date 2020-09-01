@@ -5,8 +5,8 @@ load('E:\djmaus-data\iraira\VIP_analysis\variables\SilencedirsVIP.mat')
 DIRS=silence;
 load('E:\djmaus-data\iraira\PV_analysis\variables\PVSilence.mat')
 DIRS=[DIRS silence];
-binwidth = [.05 0.1 .2 .4 .8 1.6 3.2 6.4 12.8]; % bins
-
+%binwidth = [.05 0.1 .2 .4 .8 1.6 3.2 6.4 12.8]; % bins
+binwidth = 0.1;
 cc = 0; %total cell counter
 for d = 1:length(DIRS)
     try
@@ -41,9 +41,11 @@ for d = 1:length(DIRS)
             ST1 = []; ST2 = []; ST_all =[]; data =[];
             inc1 = 0; inc2 = 0;
             switch1 = find(maxChans1 > 33);
+            
             if isempty(switch1)
                 switch1= 0;
             end
+            
             for c = 1:length(good_cells1)
                 cc = cc+1;
                 if width(c)<.71
@@ -67,48 +69,64 @@ for d = 1:length(DIRS)
                 st1=sp.st(sp.clu == sp.cids(good_cells1(c)));
                 st1 = st1(st1> start & st1 < L(silence_dir_indx));
                 st1 = st1 - start;
-                l = length(st1);
-                
-                subplot(1,2,shank); hold on
                 [N,x] = hist(st1, 0:binwidth(b):recording_duration);
                 N=N/binwidth(b);
                 N=smooth(N,10); N = N';
                 N=N/max(N);
                 data=[data; N];
                 
+                if shank == 1
+                    ST1 = [ST1 N'];
+                elseif shank == 2
+                    ST2 = [ST2 N'];
+                end
+                
                 if c == 1 || c == switch1(1) %switching to shank2
                     [M1,P1] = resampleTraces(N, moves_trace1, laxis1);
-                   
-                    if shank == 1
-                        ST1 = [ST1 N'];
-                    elseif shank == 2
-                        ST2 = [ST2 N'];
-                    end
                 end
-                   M1_shuffled = Shuffle(M1);
-                    try
-                        DC_running_shuffled(d,b,1) = distcorr(ST1, M1_shuffled);
-                        DC_running(d,b,1) = distcorr(ST1, M1);
-                    catch
-                        DC_running_shuffled(d,b,1) = NaN;
-                        DC_running(d,b,1) = NaN;
-                    end
+                
+            end % cells
+            
+            pos = 0; nn = 50;
+            for n = 1:nn
+                M1_shuffled = Shuffle(M1);
+                try
+                    DC_running_shuffled(d,b,1) = distcorr(ST1, M1_shuffled);
+                    DC_running(d,b,1) = distcorr(ST1, M1);
+                catch
+                    DC_running_shuffled(d,b,1) = NaN;
+                    DC_running(d,b,1) = NaN;
+                end
+                
+                try
+                    DC_running_shuffled(d,b,2) = distcorr(ST2, M1_shuffled);
+                    DC_running(d,b,2) = distcorr(ST2, M1);
                     
-                    try
-                        DC_running_shuffled(d,b,2) = distcorr(ST2, M1_shuffled);
-                        DC_running(d,b,2) = distcorr(ST2, M1);
-
-                    catch
-                        DC_running_shuffled(d,b,2) = NaN;
-                        DC_running(d,b,2) = NaN;
-                    end
-            end
+                catch
+                    DC_running_shuffled(d,b,2) = NaN;
+                    DC_running(d,b,2) = NaN;
+                end
+                
+                % repeat shuffle n times to see how many times it's
+                % above non random dc value at 100 ms, 0.12
+               ShuffledDC = nanmean(DC_running_shuffled);
+               if ShuffledDC >= 0.3578
+                    pos = pos +1;
+                end
+            end % number of shuffling
+            
         end %bin
-         mouseID(d) =  str2num(nb.mouseID);
+        mouseID(d) =  str2num(nb.mouseID);
     end %try
 end %dir
-cd('C:\Users\lab\Resilio Sync\Paper1Figures\code\variables'); 
-save('Silence_DistanceCorr_final.mat', 'DC_running', 'DC_running_shuffled','mouseID')
+
+zero_indx = find(DC_running(:,1,1)==0);
+DC_running(zero_indx,:,1) = NaN;
+zero_indx = find(DC_running(:,1,2)==0);
+DC_running(zero_indx,:,2) = NaN;
+
+%C:\Users\lab\Documents\GitHub\Paper1Figures\code\variables cd('C:\Users\lab\Resi\Paper1Figures\code\variables');
+%save('Silence_DistanceCorr_final2.mat', 'DC_running', 'DC_running_shuffled','mouseID')
 DistCorr = DC_running - DC_running_shuffled;
 figure; hold on
 means  =  nanmean(squeeze(nanmean(DistCorr))');
@@ -122,4 +140,15 @@ end
 xticklabels(time_labels)
 xlim([0 length(means)+1])
 
-
+figure; hold on
+plot(DistCorr(:,:,1)', 'o-')
+xticklabels(time_labels)
+xlim([0 length(means)+1])
+ylabel('Distance Corr')
+xlabel('bin time (sec)')
+figure; hold on
+plot(DistCorr(:,:,2)', 'o-')
+xticklabels(time_labels)
+xlim([0 length(means)+1])
+ylabel('Distance Corr')
+xlabel('bin time (sec)')

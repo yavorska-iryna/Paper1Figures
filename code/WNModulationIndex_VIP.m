@@ -15,9 +15,6 @@ data = WNdataLaserOFF;
 load('WNdataLaserON.mat');
 data1 = WNdataLaserON;
 load('CellsQualityStats.mat')
-sit_color = 4;
-run_color = 2;
-laser_color = 11;
 
 maxFRall =[];
 SP = nan(length(data),2);
