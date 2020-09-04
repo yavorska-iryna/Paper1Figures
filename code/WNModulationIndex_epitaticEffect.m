@@ -440,6 +440,15 @@ MI_sound_run_laser = (WN1L(:,1) - SP1L(:,1))./ (WN1L(:,1) +SP1L(:,1));
 MI_sound_sit_laser = (WN1L(:,2) - SP1L(:,2))./ (WN1L(:,2) +SP1L(:,2));
 MI_sound_predicted = MI_sound_sit_laser + MI_sound_run;
 
+% for regression
+y = MI_sound_predicted;
+indx = isnan(MI_sound_predicted);
+y(indx)=[];
+x = MI_sound_run_laser;
+x(indx) = [];
+x=[x ones(length(x),1)];
+[B,BINT,R,RINT,STATS] = regress(y,x) ;
+
 %find 99 cells used in this analysis, save their indices, 
 indx1 = find(~isnan(MI_sound_run_laser)==1); 
 indx2 = find(~isnan(MI_sound_predicted)==1);
@@ -449,26 +458,57 @@ cd(variables_dir)
 save('ModulationIndices.mat', 'MI_sound_run', 'MI_sound_sit', 'MI_sound_run_laser', 'MI_sound_sit_laser', 'MI_sound_predicted')
 save('example_cells_epistatic.mat', 'cell_number1')
 
-% plot MI
+%%%%% plot sound modulation indices %%%%%%%%
+% These plots are not very meaningful because they will both show high
+% correlations: responsive cells will continue to be responsive in all
+% conditions
 figure; hold on
-plot(MI_sound_sit(rs1) ,MI_sound_run(rs1), 'ko')
-plot(MI_sound_sit(fs1) ,MI_sound_run(fs1), 'go')
-ylabel('sound MI running'); xlabel('sound MI sitting')
-[r, p] = corr(MI_sound_run,MI_sound_sit, 'Type','Spearman','Rows', 'complete')
-plot([-1 1], [-1 1], 'r-')
-plot([-1 1], [0 0], 'k--')
-plot([0 0], [-1 1], 'k--')
+plot(MI_sound_predicted(rs1) ,MI_sound_run_laser(rs1), 'ko')
+plot(MI_sound_predicted(fs1) ,MI_sound_run_laser(fs1), 'go')
+xlabel('sound MI combined (runnning + laser)'); ylabel('sound MI running + laser on trials')
+[r, p] = corr(MI_sound_predicted,MI_sound_run_laser, 'Type','Spearman','Rows', 'complete')
+plot([-2 2], [-2 2], 'r-')
+plot([-2 2], [0 0], 'k--')
+plot([0 0], [-2 2], 'k--')
 pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string); legend('Regular spiking', 'Narrow spiking')
 
-% plot difference in MI
+figure; hold on
+plot(MI_sound_run(rs1) ,MI_sound_sit_laser(rs1), 'ko')
+plot(MI_sound_run(fs1) ,MI_sound_sit_laser(fs1), 'go')
+xlabel('sound MI run'); ylabel('sound MI laser on')
+[r, p] = corr(MI_sound_run,MI_sound_sit_laser, 'Type','Spearman','Rows', 'complete')
+plot([-2 2], [-2 2], 'r-')
+plot([-2 2], [0 0], 'k--')
+plot([0 0], [-2 2], 'k--')
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string); legend('Regular spiking', 'Narrow spiking')
+
+
+%%%% plot difference in MI %%%%
+% To look more closely at differences in MI in different conditions 
 run_diff =  MI_sound_run - MI_sound_sit;
 laser_diff = MI_sound_sit_laser - MI_sound_sit;
 predicted_diff = run_diff + laser_diff;
 actual_diff =  MI_sound_run_laser - MI_sound_sit;
 
+
+% for regression
+y = laser_diff;
+indx = isnan(laser_diff);
+y(indx)=[];
+x = run_diff;
+x(indx) = [];
+X = [ones(length(x),1) X];
+[B,BINT,R,RINT,STATS] = regress(y,X) ;
+regressline = laser_diff*B(2) + B(1);
+
 figure; hold
 plot(run_diff(rs1), laser_diff(rs1), 'ko', 'MarkerSize', 8)
 plot(run_diff(fs1), laser_diff(fs1), 'go', 'MarkerSize', 8)
+plot(run_diff, regressline, 'r-')
 xlabel('Running Effect (MI diff)')
 ylabel('Laser Effect (MI diff)')
 plot([-2 2], [0 0], 'k--')
@@ -481,11 +521,23 @@ pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
 ylim([-2 2])
 xlim([-2 2])
 
+
+% for regression
+y = actual_diff;
+indx = isnan(actual_diff);
+y(indx)=[];
+x = predicted_diff;
+x(indx) = [];
+X=[ones(length(x),1) x];
+[B,BINT,R,RINT,STATS] = regress(y,X) ;
+regressline = predicted_diff*B(2) + B(1);
+
 figure; hold on
-plot(actual_diff(rs1), predicted_diff(rs1), 'ko', 'MarkerSize', 8)
-plot(actual_diff(fs1), predicted_diff(fs1), 'go', 'MarkerSize', 8)
-xlabel('Combined Effect (running laser on trials)')
-ylabel('Predicted combined Effect (running effect + laser effect)')
+plot(predicted_diff(rs1), actual_diff(rs1), 'ko', 'MarkerSize', 8)
+plot(predicted_diff(fs1), actual_diff(fs1), 'go', 'MarkerSize', 8)
+xlabel({'Computed Combined Effect';'(running effect +  laser effect)'})
+ylabel({'Recorded Combined Effect';'(running + laser on trials)'})
+plot(predicted_diff, regressline)
 plot([-4 2], [0 0], 'k--')
 plot([0 0], [-4 2], 'k--')
 plot([-4 4], [-4 4], 'k--')
@@ -493,8 +545,9 @@ plot([-4 4], [-4 4], 'k--')
 title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
 ylim([-4 2])
 xlim([-4 2])
-title(title_string); legend('Regular spiking', 'Narrow spiking')
+title(title_string); legend('Regular spiking', 'Narrow spiking', 'Regression Line')
 pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+
 
 [h1,x] = hist(MI_sound_sit, [-1:.1:1]);
 h = smooth(h1,3);
