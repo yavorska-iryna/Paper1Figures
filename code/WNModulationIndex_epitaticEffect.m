@@ -494,6 +494,22 @@ laser_diff = MI_sound_sit_laser - MI_sound_sit;
 predicted_diff = run_diff + laser_diff;
 actual_diff =  MI_sound_run_laser - MI_sound_sit;
 
+% for regression
+y = actual_diff;
+indx = isnan(actual_diff);
+y(indx)=[];
+x = run_diff;
+x(indx) = [];
+X = [ones(length(x),1) x];
+[B,BINT,R,RINT,STATS] = regress(y,X) ;
+
+y = actual_diff;
+indx = isnan(actual_diff);
+y(indx)=[];
+x = laser_diff;
+x(indx) = [];
+X = [ones(length(x),1) x];
+[B,BINT,R,RINT,STATS] = regress(y,X);
 
 % for regression
 y = laser_diff;
@@ -501,7 +517,7 @@ indx = isnan(laser_diff);
 y(indx)=[];
 x = run_diff;
 x(indx) = [];
-X = [ones(length(x),1) X];
+X = [ones(length(x),1) x];
 [B,BINT,R,RINT,STATS] = regress(y,X) ;
 regressline = laser_diff*B(2) + B(1);
 
@@ -627,6 +643,7 @@ title_string = sprintf( 'On response MI, n = %d, %d, %d, %d',  n_layer);
 title(title_string)
 legend('sitting','running')
 
+%% Firing Rate Analysis %%%
 % distribution scatter plot
 figure; hold on
 plot(WN1(rs1,2), WN1(rs1,1), 'ko')
@@ -652,6 +669,83 @@ title(title_str)
 xlabel('FR running (Hz)'); ylabel('FR running (Hz)')
 pbaspect([1 1 1]); set(gcf, 'PaperPositionMode', 'auto');
 
+laser_effect_evokedFR = WN1L(:,2) - WN1(:,2);
+laser_effect_spontFR = SP1L(:,2) - SP1(:,2);
+
+run_effect_evokedFR = WN1(:,1) - WN1(:,2);
+run_effect_spontFR = SP1L(:,1) - SP1(:,2);
+
+run_laser_effect_evokedFR = WN1L(:,1) - WN1(:,2);
+run_laser_effect_spontFR = SP1L(:,1) - SP1(:,2);
+
+predicted_effect_evokedFR = laser_effect_evokedFR  + run_effect_evokedFR;
+predicted_effect_spontFR = laser_effect_spontFR + run_effect_spontFR ;
+
+[r, p] = corr(run_laser_effect_evokedFR, predicted_effect_evokedFR, 'Type','Spearman','Rows', 'complete');
+[r, p] = corr(run_laser_effect_spontFR, predicted_effect_spontFR, 'Type','Spearman','Rows', 'complete');
+
+% laser and runnign effect
+figure; 
+subplot(2,1,1); hold on
+plot(run_effect_evokedFR(rs1), laser_effect_evokedFR(rs1),  'ko', 'MarkerSize', 8)
+plot(run_effect_evokedFR(fs1), laser_effect_evokedFR(fs1), 'go', 'MarkerSize', 8)
+xlabel('Change in FR (running)')
+ylabel('Change in FR (laser on)')
+plot([min(run_effect_evokedFR) max(run_effect_evokedFR)], [0 0], 'k--')
+plot([0 0], [min(laser_effect_evokedFR) max(run_effect_evokedFR)], 'k--')
+[r, p] = corr(run_effect_evokedFR, laser_effect_evokedFR, 'Type','Spearman','Rows', 'complete')
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string); legend('Regular spiking', 'Narrow spiking')
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+xlim([min(run_effect_evokedFR) max(run_effect_evokedFR)]);
+ylim([min(laser_effect_evokedFR) max(run_effect_evokedFR)])
+
+subplot(2,1,2); hold on
+plot(run_effect_spontFR(rs1), laser_effect_spontFR(rs1),  'ko', 'MarkerSize', 8)
+plot(run_effect_spontFR(fs1), laser_effect_spontFR(fs1), 'go', 'MarkerSize', 8)
+xlabel('Change in FR (running)')
+ylabel('Change in FR (laser on)')
+plot([min(run_effect_spontFR) max(run_effect_spontFR)], [0 0], 'k--')
+plot([0 0], [min(laser_effect_spontFR) max(run_effect_spontFR)], 'k--')
+[r, p] = corr(run_effect_spontFR, laser_effect_spontFR, 'Type','Spearman','Rows', 'complete')
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string); legend('Regular spiking', 'Narrow spiking')
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+xlim([min(run_effect_spontFR) max(run_effect_spontFR)])
+ylim([min(laser_effect_spontFR) max(run_effect_spontFR)])
+
+% predicted and actual
+
+figure; 
+subplot(2,1,1); hold on
+plot(predicted_effect_evokedFR(rs1), run_laser_effect_evokedFR(rs1),  'ko', 'MarkerSize', 8)
+plot(predicted_effect_evokedFR(fs1), run_laser_effect_evokedFR(fs1), 'go', 'MarkerSize', 8)
+xlabel('Change in FR (running)')
+ylabel('Change in FR (laser on)')
+plot([min(run_effect_evokedFR) max(run_effect_evokedFR)], [0 0], 'k--')
+plot([0 0], [min(laser_effect_evokedFR) max(run_effect_evokedFR)], 'k--')
+[r, p] = corr(run_effect_evokedFR, laser_effect_evokedFR, 'Type','Spearman','Rows', 'complete')
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string); legend('Regular spiking', 'Narrow spiking')
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+xlim([min(predicted_effect_evokedFR) max(run_laser_effect_evokedFR)]);
+ylim([min(predicted_effect_evokedFR) max(run_laser_effect_evokedFR)])
+
+subplot(2,1,2); hold on
+plot(predicted_effect_spontFR(rs1), run_laser_effect_spontFR(rs1),  'ko', 'MarkerSize', 8)
+plot(predicted_effect_spontFR(fs1), run_laser_effect_spontFR(fs1), 'go', 'MarkerSize', 8)
+xlabel('Change in FR (running)')
+ylabel('Change in FR (laser on)')
+plot([min(run_effect_spontFR) max(run_effect_spontFR)], [0 0], 'k--')
+plot([0 0], [min(laser_effect_spontFR) max(run_effect_spontFR)], 'k--')
+[r, p] = corr(run_effect_spontFR, laser_effect_spontFR, 'Type','Spearman','Rows', 'complete')
+title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
+title(title_string); legend('Regular spiking', 'Narrow spiking')
+pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
+xlim([min(predicted_effect_spontFR) max(run_laser_effect_spontFR)])
+ylim([min(predicted_effect_spontFR) max(run_laser_effect_spontFR)])
+
+%% modulation index separately for evoked and spont
 fs1 = logical(fs1); rs1 = logical(rs1);
 MI1_rs = (WN1(rs1,1) - WN1(rs1,2))./ (WN1(rs1,1) +WN1(rs1,2));
 MI1_fs = (WN1(fs1,1) - WN1(fs1,2))./ (WN1(fs1,1) +WN1(fs1,2));
@@ -671,7 +765,6 @@ xticklabels({'Spont run + laser off', 'Evoked run + laser off'})
 ylabel('Modulation Index')
 
 
-%% laser modulation
 figure; hold on
 errorbar([1.1:4.1], meanMI_sound_sit, semMI_sound_sit, 'ko-');
 errorbar([1:4], meanMI_sound_sitL, semMI_sound_sitL, 'co-');
