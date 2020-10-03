@@ -30,12 +30,12 @@ depths = nan(length(data),1);
 fs = zeros(length(data),1);
 Rs = zeros(length(data),1);
 WNdirsM =[]; WNcellsM = 0; SSdirsM =[]; SScellsM = 0;
-recs = []; cells=[]; mouse_ID = {};
+recs = []; cells=[]; mouse_ID = []; mouse = [];
 
 evoked = zeros(length(data),4); zstats = zeros(length(data),4);
 color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
 nreps_check_running = 6; %number of repetitions in each condition for comparison
-CL = {[0 301], [300 401], [400 601], [600 2000]}; id = 0;
+CL = { [129 380], [379 525], [524 806], [805 2000]};  id = 0;
 
 cdVIP; load('Silence_DistanceCorr_dirs.mat')
 cdPV;  load('allPINPdirs.mat') % load all 45 dirs
@@ -156,8 +156,16 @@ for cc =1:length(data)
         end
         end
     end
+    
     recs = [recs data(cc).dir];
     cells = [cells data(cc).cell];
+    try
+        cd(PINPdirs{data(cc).dir})
+        load('notebook.mat')
+        mouse_ID(cc) = str2num(nb.mouseID);
+    catch
+        mouse_ID(cc) = NaN;
+    end
 end
 %% ANALYSIS %%
 % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -198,6 +206,7 @@ depths1 = depths(evoked1);
 fs1 = fs(evoked1);
 rs1 = Rs(evoked1);
 rs1 = logical(rs1); fs1 = logical(fs1);
+mouse_ID1 = mouse_ID(evoked1);
 
 EvokedWN = WN1;
 modulation_indx1 = (EvokedWN(:,1) - EvokedWN(:,2))./(EvokedWN(:,1) + EvokedWN(:,2));
@@ -366,7 +375,6 @@ for cl = 1:length(CL)
     meanMI1(cl) = nanmean(modulation_indx1(indx)); % mean, laser off
     meanMI1L(cl) = nanmean(modulation_indx1L(indx)); % mean, laser on
     meanMI1_Laser(cl) = nanmean(modulation_indx1Laser(indx)); % mean laser effect
-    meanMI2(cl) = nanmean(modulation_indx2(indx));
     
     meanMI1_rs(cl) = nanmean(modulation_indx1(indx(rs2)));
     meanMI1_fs(cl) = nanmean(modulation_indx1(indx(fs2)));
@@ -376,7 +384,6 @@ for cl = 1:length(CL)
     semMI1(cl) = sem(modulation_indx1(indx));
     semMI1L(cl) = sem(modulation_indx1L(indx));
     semMI1_Laser(cl) = sem(modulation_indx1Laser(indx));
-    semMI2(cl) = sem(modulation_indx2(indx));
     
     semMI1_rs(cl) = sem(modulation_indx1(indx(rs2)));
     semMI1_fs(cl) = sem(modulation_indx1(indx(fs2)));
@@ -400,16 +407,7 @@ for cl = 1:length(CL)
     semMI_evoked_plus(cl) = sem(MI_evoked_plus(indx));
     n_layer_evoked_plus(cl) = length(find(~isnan(MI_evoked_plus(indx))==1)); %number of cell
     
-    % evoked - spont
-    meanMI2(cl) = nanmean(modulation_indx2(indx)); % mean, laser off
-    meanMI2L(cl) = nanmean(modulation_indx2L(indx)); % mean, laser on
-    
-    meanMI2(cl) = nanmean(modulation_indx2(indx));
-    meanMI2L(cl) = nanmean(modulation_indx2L(indx));
-    
-    semMI2(cl) = sem(modulation_indx2(indx));
-    semMI2L(cl) = sem(modulation_indx2L(indx));
-    
+
     % % spont activity
     meanMI1_sp(cl) = nanmean(modulation_indx1_sp(indx));
     meanMI1_spL(cl) = nanmean(modulation_indx1_spL(indx));
@@ -585,17 +583,6 @@ xticks([1:4]); xlim([0 5])
 xticklabels({'2/3', '4', '5', '6'});
 ylabel('Modulation Index'); title('Spont Activity')
 
-% subtract spont activity from evoked.
-figure; hold on;  hold on
-errorbar([1:4], meanMI2, semMI2, 'ko-');
-xlabel('Cortical Layer')
-plot([0 5], [0 0], 'k--')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
-ylabel('Modulation Index');
-title_string = sprintf('WN On response (w/o spont), n = %d, %d, %d, %d',  n_layer_evoked);
-title(title_string)
-
 
 % plot firing rate distributions
 figure; 
@@ -644,6 +631,27 @@ MI_sound_run_laser = (WN1L(:,1) - SP1L(:,1))./ (WN1L(:,1) +SP1L(:,1));
 MI_sound_sit_laser = (WN1L(:,2) - SP1L(:,2))./ (WN1L(:,2) +SP1L(:,2));
 MI_sound_predicted = MI_sound_sit_laser + MI_sound_run;
 
+% does running effect differ across recordings?
+x=MI_sound_run - MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, recs1);
+c = multcompare(stats);
+title('Running Effect (Sound MI run - Sound MI sit), recordings')
+[m,s]=grpstats(x, recs1,{'mean','sem'});
+
+% does sound responsiveness differ across recordings
+x= MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, recs1);
+c = multcompare(stats);
+title('Sound MI across , recordings')
+[m,s]=grpstats(x,recs1,{'mean','sem'});
+
+x=MI_sound_run - MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, mouse_ID1);
+c = multcompare(stats);
+title('Running Effect (Sound MI run - Sound MI sit), mice')
+[m,s]=grpstats(x,mouse_ID1,{'mean','sem'});
+
+
 % plot MI
 figure; hold on
 plot(MI_sound_sit(rs1) ,MI_sound_run(rs1), 'ko')
@@ -677,13 +685,30 @@ fprintf('running vs sitting, laser off')
 fprintf('running vs sitting, laser on')
 [p,h stats] =ranksum(MI_sound_run_laser, MI_sound_sit_laser)
 
+
 for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
+    rs2 = rs1(indx); fs2 = fs1(indx);
+    
+    
     meanMI_sound_run(cl) = nanmean(MI_sound_run(indx));
     meanMI_sound_sit(cl) = nanmean(MI_sound_sit(indx));
+    m1=MI_sound_run(indx);
+    m2 = MI_sound_sit(indx);
+    meanMI_sound_run_rs(cl) = nanmean(m1(rs2));
+    meanMI_sound_sit_rs(cl) = nanmean(m2(rs2));
+    meanMI_sound_run_fs(cl) = nanmean(m1(fs2));
+    meanMI_sound_sit_fs(cl) = nanmean(m2(fs2));
+    
+    
     semMI_sound_run(cl) = sem(MI_sound_run(indx));
     semMI_sound_sit(cl) = sem(MI_sound_sit(indx));
+    semMI_sound_run_rs(cl) = sem(m1(rs2));
+    semMI_sound_sit_rs(cl) = sem(m2(rs2));
+    semMI_sound_run_fs(cl) = sem(m1(fs2));
+    semMI_sound_sit_fs(cl) = sem(m2(fs2));
+    
     n_layer(cl) = sum(~isnan(MI_sound_run(indx)));
     
     [p,h,STATS] = signrank(MI_sound_run(indx), MI_sound_sit(indx));
@@ -698,7 +723,21 @@ end
 
 figure; hold on
 errorbar([1:4], meanMI_sound_sit, semMI_sound_sit, 'ko-');
-errorbar([1:4], meanMI_sound_run, semMI_sound_run, 'ko--');
+errorbar([1.1:4.1], meanMI_sound_run, semMI_sound_run, 'ko--');
+xlabel('Cortical Layer')
+plot([0 5], [0 0], 'k--')
+xticks([1:4]); xlim([0 5])
+xticklabels({'2/3', '4', '5', '6'});
+ylabel('Sound Modulation Index (mean/SEM)');
+title_string = sprintf( ' Sound MI, n = %d, %d, %d, %d',  n_layer);
+title(title_string)
+legend( 'sitting', 'running')
+
+figure; hold on
+errorbar([1:4], meanMI_sound_sit_rs, semMI_sound_sit_rs, 'ko-');
+errorbar([1:4], meanMI_sound_run_rs, semMI_sound_run_rs, 'ko--');
+errorbar([1:4], meanMI_sound_sit_fs, semMI_sound_sit_fs, 'go-');
+errorbar([1:4], meanMI_sound_run_fs, semMI_sound_run_fs, 'go--');
 xlabel('Cortical Layer')
 plot([0 5], [0 0], 'k--')
 xticks([1:4]); xlim([0 5])
@@ -707,7 +746,6 @@ ylabel('Sound Modulation Index (mean/SEM)');
 title_string = sprintf( 'On response MI, n = %d, %d, %d, %d',  n_layer);
 title(title_string)
 legend( 'sitting', 'running')
-
 
 % distribution scatter plot
 figure; hold on

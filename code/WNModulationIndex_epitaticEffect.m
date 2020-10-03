@@ -722,9 +722,9 @@ plot(predicted_effect_evokedFR(rs1), run_laser_effect_evokedFR(rs1),  'ko', 'Mar
 plot(predicted_effect_evokedFR(fs1), run_laser_effect_evokedFR(fs1), 'go', 'MarkerSize', 8)
 xlabel('Change in FR (running)')
 ylabel('Change in FR (laser on)')
-plot([min(run_effect_evokedFR) max(run_effect_evokedFR)], [0 0], 'k--')
-plot([0 0], [min(laser_effect_evokedFR) max(run_effect_evokedFR)], 'k--')
-[r, p] = corr(run_effect_evokedFR, laser_effect_evokedFR, 'Type','Spearman','Rows', 'complete')
+plot([min(predicted_effect_evokedFR) max(run_laser_effect_evokedFR)], [0 0], 'k--')
+plot([0 0], [min(predicted_effect_evokedFR) max(run_laser_effect_evokedFR)], 'k--')
+[r, p] = corr(predicted_effect_evokedFR, run_laser_effect_evokedFR, 'Type','Spearman','Rows', 'complete');
 title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
 title(title_string); legend('Regular spiking', 'Narrow spiking')
 pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
@@ -736,15 +736,21 @@ plot(predicted_effect_spontFR(rs1), run_laser_effect_spontFR(rs1),  'ko', 'Marke
 plot(predicted_effect_spontFR(fs1), run_laser_effect_spontFR(fs1), 'go', 'MarkerSize', 8)
 xlabel('Change in FR (running)')
 ylabel('Change in FR (laser on)')
-plot([min(run_effect_spontFR) max(run_effect_spontFR)], [0 0], 'k--')
-plot([0 0], [min(laser_effect_spontFR) max(run_effect_spontFR)], 'k--')
-[r, p] = corr(run_effect_spontFR, laser_effect_spontFR, 'Type','Spearman','Rows', 'complete')
+plot([min(predicted_effect_spontFR) max(run_laser_effect_spontFR)], [0 0], 'k--')
+plot([0 0], [min(predicted_effect_spontFR) max(run_laser_effect_spontFR)], 'k--')
+[r, p] = corr(predicted_effect_spontFR, run_laser_effect_spontFR, 'Type','Spearman','Rows', 'complete');
 title_string = sprintf( 'rho = %.4f, p = %.4f', r,p);
 title(title_string); legend('Regular spiking', 'Narrow spiking')
 pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
 xlim([min(predicted_effect_spontFR) max(run_laser_effect_spontFR)])
 ylim([min(predicted_effect_spontFR) max(run_laser_effect_spontFR)])
 
+[r, p] = corr(predicted_effect_evokedFR, run_laser_effect_evokedFR, 'Type','Spearman','Rows', 'complete')
+[r, p] = corr(predicted_effect_evokedFR(rs1), run_laser_effect_evokedFR(rs1), 'Type','Spearman','Rows', 'complete')
+[r, p] = corr(predicted_effect_evokedFR(fs1), run_laser_effect_evokedFR(fs1), 'Type','Spearman','Rows', 'complete')
+[r, p] = corr(predicted_effect_spontFR, run_laser_effect_spontFR, 'Type','Spearman','Rows', 'complete')
+[r, p] = corr(predicted_effect_spontFR(rs1), run_laser_effect_spontFR(rs1), 'Type','Spearman','Rows', 'complete')
+[r, p] = corr(predicted_effect_spontFR(fs1), run_laser_effect_spontFR(fs1), 'Type','Spearman','Rows', 'complete')
 %% modulation index separately for evoked and spont
 fs1 = logical(fs1); rs1 = logical(rs1);
 MI1_rs = (WN1(rs1,1) - WN1(rs1,2))./ (WN1(rs1,1) +WN1(rs1,2));

@@ -5,15 +5,15 @@ load('E:\djmaus-data\iraira\VIP_analysis\variables\SilencedirsVIP.mat')
 DIRS=silence;
 load('E:\djmaus-data\iraira\PV_analysis\variables\PVSilence.mat')
 DIRS=[DIRS silence];
-%binwidth = [.05 0.1 .2 .4 .8 1.6 3.2 6.4 12.8]; % bins
-binwidth = 0.1;
-cc = 0; %total cell counter
+binwidth = [0.01 0.025 .05 0.1 .2 .4 .8 1.6 3.2 6.4 12.8]; % bins
+cc = 0; %total cell counter 
+POS =nan(length(DIRS),length(binwidth));
 for d = 1:length(DIRS)
     try
         cd(DIRS{d})
         load('dirs.mat')
         load('notebook.mat')
-        sp = loadKSdir(dirs{1});
+        sp = loadKSdir(dirs{1}); 
         good_cells = find(sp.cgs == 2);
         load([dirs{1} '\RecLengths.mat'])
         load([dirs{1} '\maxChans.mat'])
@@ -87,7 +87,7 @@ for d = 1:length(DIRS)
                 
             end % cells
             
-            pos = 0; nn = 50;
+            pos = 0; nn = 20;
             for n = 1:nn
                 M1_shuffled = Shuffle(M1);
                 try
@@ -109,11 +109,13 @@ for d = 1:length(DIRS)
                 
                 % repeat shuffle n times to see how many times it's
                 % above non random dc value at 100 ms, 0.12
-               ShuffledDC = nanmean(DC_running_shuffled);
-               if ShuffledDC >= 0.3578
+               ShuffledDC = nanmean(DC_running_shuffled(d,b,:));
+               if ShuffledDC >= nanmean(DC_running(d,b,:) -DC_running_shuffled(d,b,:))
                     pos = pos +1;
-                end
+               end
+                
             end % number of shuffling
+            POS(d,b) = pos;
             
         end %bin
         mouseID(d) =  str2num(nb.mouseID);
@@ -125,8 +127,8 @@ DC_running(zero_indx,:,1) = NaN;
 zero_indx = find(DC_running(:,1,2)==0);
 DC_running(zero_indx,:,2) = NaN;
 
-%C:\Users\lab\Documents\GitHub\Paper1Figures\code\variables cd('C:\Users\lab\Resi\Paper1Figures\code\variables');
-%save('Silence_DistanceCorr_final2.mat', 'DC_running', 'DC_running_shuffled','mouseID')
+cd('C:\Users\lab\Documents\GitHub\Paper1Figures\code\variables') %cd('C:\Users\lab\Resi\Paper1Figures\code\variables');
+save('Silence_DistanceCorr_final4.mat', 'DC_running', 'DC_running_shuffled','mouseID', 'POS')
 DistCorr = DC_running - DC_running_shuffled;
 figure; hold on
 means  =  nanmean(squeeze(nanmean(DistCorr))');

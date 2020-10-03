@@ -30,12 +30,12 @@ depths = nan(length(data),1);
 fs = zeros(length(data),1);
 Rs = zeros(length(data),1);
 WNdirsM =[]; WNcellsM = 0; SSdirsM =[]; SScellsM = 0;
-recs = []; cells=[]; mouse_ID = {};
+recs = []; cells=[]; mouse_ID = [];
 
 evoked = zeros(length(data),4); zstats = zeros(length(data),4);
 color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
 nreps_check_running = -1; %number of repetitions in each condition for comparison
-CL = {[0 301], [300 401], [400 601], [600 2000]}; id =0;
+CL = {[0 130], [129 380], [379 525], [524 806], [805 2000]}; id =0;
 
 cdVIP; load('Silence_DistanceCorr_dirs.mat'); 
 cdPV;  load('allPINPdirs.mat') % load all 45 dirs
@@ -151,36 +151,23 @@ for cc =1:length(data)
             
             recs = [recs data(cc).dir]; % unique recordings, all
             cells = [cells data(cc).cell]; % cell numbers
-            
-            if cc == 1 || recs(cc) - recs(cc-1) ~= 0
-                id = id +1;
-                cd(PINPdirs{recs(cc)})
+            try
+                cd(PINPdirs{data(cc).dir})
                 load('notebook.mat')
-                if strcmp(nb.mouseID, '') == 0
-                    mouse_ID{id} = nb.mouseID;
-                else
-                    load('dirs.mat')
-                    for d = 1: length(dirs)
-                        cd(dirs{d})
-                        load('notebook.mat')
-                        if strcmp(nb.mouseID,'') == 0
-                            mouse_ID{id} = nb.mouseID;
-                        end
-                    end
-                end   
+                mouse_ID(cc) = str2num(nb.mouseID);
+            catch
+                mouse_ID(cc) = NaN;
             end
-            
         else
             recs = [recs NaN]; % unique recordings, all
             cells = [cells data(cc).cell]; % cell numbers
-            
+            mouse_ID(cc) = mouse_ID(cc-1);
         end
     end
 
 end
 
 allDirsM = unique(WNdirsM); % recording that passed min running trials
-all_mice = unique(mouse_ID);
 
 %% ANALYSIS %%
 % % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -226,12 +213,14 @@ WN1L = meanONL(evoked1,:);
 SP1 = SP(evoked1,:);
 SP1L = SPL(evoked1,:);
 
+depths = depths+100;
 depths1 = depths(evoked1);
 fs1 = fs(evoked1); rs1 = Rs(evoked1);
 rs1 = logical(rs1); fs1 = logical(fs1);
 
 recs1= (recs(evoked1));
 cells1 = cells(evoked1); 
+mouse_ID1 = mouse_ID(evoked1);
 
 % plot firing rate distributions
 figure;
@@ -432,21 +421,21 @@ end
 
 % state by layer without layer
 figure; hold on; subplot(2,1,1); hold on
-errorbar([1:4], meanLaserEffect_evoked, semLaserEffect_evoked, 'ko-');
+errorbar([1:length(CL)], meanLaserEffect_evoked, semLaserEffect_evoked, 'ko-');
 xlabel('Cortical Layer')
 plot([0 5], [0 0], '--')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
+xticks([1:length(CL)]); xlim([0 5])
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('Laser Effect');
 title_string = sprintf('WN On response, n = %d, %d, %d, %d',  n_layer_evokedLaser);
 title(title_string)
 
 subplot(2,1,2); hold on
-errorbar([1:4], meanLaserEffect_spont, semLaserEffect_spont, 'ko-');
+errorbar([1:length(CL)], meanLaserEffect_spont, semLaserEffect_spont, 'ko-');
 xlabel('Cortical Layer')
 plot([0 5], [0 0], '--')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
+xticks([1:length(CL)]); xlim([0 5])
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('Laser Effect');
 title_string = sprintf('Spont On response, n = %d, %d, %d, %d',  n_layer_spLaser);
 title(title_string)
@@ -462,14 +451,6 @@ x = LASER_EFFECT_SPONT(:,1); % effect
 y = LASER_EFFECT_SPONT(:,2); % layer
 [p,tbl1,stats] = kruskalwallis(x, y);
 title('Laser Effect by layer, Spont')
-c = multcompare(stats);
-title('Laser Effect by layer, Spont')
-
-
-x = LASER_EFFECT_SPONT(rs1,1); % effect 
-y = LASER_EFFECT_SPONT(rs1,2); % layer
-[p,tbl1,stats] = kruskalwallis(x, y);
-title('Laser Effect by layer RS, Spont')
 c = multcompare(stats);
 title('Laser Effect by layer, Spont')
 
@@ -555,24 +536,24 @@ title(title_str); pbaspect([1 1 1]);
 % RS and FS evoked and spont by layers
 figure; % evoked
 subplot(2,1,1); hold on
-errorbar([0.9:3.9], meanLaserEffect_evoked_rs, semLaserEffect_evoked_rs, 'ko-');
-errorbar([1.1:4.1], meanLaserEffect_evoked_fs, semLaserEffect_evoked_fs, 'k*-');
+errorbar([0.9:4.9], meanLaserEffect_evoked_rs, semLaserEffect_evoked_rs, 'ko-');
+errorbar([1.1:5.1], meanLaserEffect_evoked_fs, semLaserEffect_evoked_fs, 'k*-');
 xlabel('Cortical Layer')
-plot([0 5], [0 0], 'k--')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
+plot([0 length(CL)+1], [0 0], 'k--')
+xticks([1:length(CL)]); xlim([0 length(CL)+1])
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('Laser Effect'); 
 legend('RS', 'FS')
-title_string = sprintf('Laser Effect, Evoked, RS n = %d, %d, %d, %d, n = %d, %d, %d, %d',  n_rs_layer, n_fs_layer);
+title_string = sprintf('Laser Effect, Evoked, RS n = %d, %d, %d, %d, %d, n = %d, %d, %d, %d, %d',  n_rs_layer, n_fs_layer);
 title(title_string)
 % spont
 subplot(2,1,2); hold on
-errorbar([0.9:3.9], meanLaserEffect_spont_rs, semLaserEffect_spont_rs, 'ko-');
-errorbar([1.1:4.1], meanLaserEffect_spont_fs, semLaserEffect_spont_fs, 'k*-');
+errorbar([0.9:length(CL)-.1], meanLaserEffect_spont_rs, semLaserEffect_spont_rs, 'ko-');
+errorbar([1.1:length(CL)+.1], meanLaserEffect_spont_fs, semLaserEffect_spont_fs, 'k*-');
 xlabel('Cortical Layer')
-plot([0 5], [0 0], 'k--')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
+plot([0 length(CL)+1], [0 0], 'k--')
+xticks([1:length(CL)]); xlim([0 length(CL)+1])
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('Laser Effect');
 legend('RS', 'FS')
 title_string = sprintf('Laser Effectt, Spont activity');
@@ -607,14 +588,14 @@ title(sprintf('Spont, RS r = %.4f, p = %d, FS = %.4f, p = %d', r1, p1, r2, p2))
 % Plot firing rates by cortical layer to identify what drives laser effect
 H = []; FRs_evoked = []; FRs_spont =[]; FSindx = []; RSindx = [];
 FRs_evoked_laser = []; FRs_spont_laser =[];
-for cl = 1:4
+for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 >layer(1) & depths1 < layer(2)); % indices of cells within this layer
     fs2 = fs1(indx); fs2 = logical(fs2); % fast spiking cells in this layer
     rs2 = rs1(indx); rs2 = logical(rs2); % regular spiking cells in this layer
     FSindx = [FSindx; fs2]; RSindx = [RSindx; rs2];
     
-    if cl == 2 % save index of cells in layer 4. to look at them closer
+    if cl == 3 % save index of cells in layer 4. to look at them closer
         layer4_index = indx;
     end
     
@@ -658,11 +639,19 @@ for cl = 1:4
     FR_spont_sems_laser_on_fs(cl) = sem(SP1L(indx(fs2),2));
     
     % stats
-    [p,h,STATS] = signrank(WN1(indx,2), WN1L(indx,2));
-    H(1,cl) = p;
+    try
+        [p,h,STATS] = signrank(WN1(indx,2), WN1L(indx,2));
+        H(1,cl) = p;
+    catch
+        H(1,cl) = NaN;
+    end
     
-    [p,h,STATS] = signrank(SP1(indx,2), SP1L(indx,2));
-    H(2,cl) = p;
+    try
+        [p,h,STATS] = signrank(SP1(indx,2), SP1L(indx,2));
+        H(2,cl) = p;
+    catch
+        H(2,cl) = NaN;
+    end
 end
 
 % Overall
@@ -726,48 +715,48 @@ end
 
 % plot FR across layers
 figure; subplot(2,1,1); hold on
-errorbar([1:4], FR_evoked_means_laser_off, FR_evoked_sems_laser_off, 'ko-')
-plot([1:4], FR_evoked_medians_laser_off, 'k*-')
-errorbar([1.2:4.2], FR_evoked_means_laser_on, FR_evoked_sems_laser_on, 'co-')
-plot([1.1:4.1], FR_evoked_medians_laser_on, 'c*-')
-plot([1.1:4.1], max(FR_evoked_means_laser_on).*(H(1,:) <0.0125), '*r')
+errorbar([1:length(CL)], FR_evoked_means_laser_off, FR_evoked_sems_laser_off, 'ko-')
+plot([1:length(CL)], FR_evoked_medians_laser_off, 'k*-')
+errorbar([1.2:length(CL)+.2], FR_evoked_means_laser_on, FR_evoked_sems_laser_on, 'co-')
+plot([1.1:length(CL)+.2], FR_evoked_medians_laser_on, 'c*-')
+plot([1.1:length(CL)+.1], max(FR_evoked_means_laser_on).*(H(1,:) <0.0125), '*r')
 legend('mean laser off', 'median laser off', 'mean laser on', 'median laser on')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
+xticks([1:length(CL)]); xlim([0 5])
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('Mean (median) FR /SEM')
 title('Evoked')
 subplot(2,1,2); hold on;
-errorbar([1:4], FR_spont_means_laser_off, FR_spont_sems_laser_off, 'ko-')
-plot([1:4], FR_spont_medians_laser_off, 'k*-')
-errorbar([1.2:4.2], FR_spont_means_laser_on, FR_spont_sems_laser_on, 'co-')
-plot([1.2:4.2], FR_spont_medians_laser_on, 'c*-')
-plot([1.1:4.1], max(FR_spont_means_laser_on).*(H(2,:) <0.0125), '*r')
+errorbar([1:length(CL)], FR_spont_means_laser_off, FR_spont_sems_laser_off, 'ko-')
+plot([1:length(CL)], FR_spont_medians_laser_off, 'k*-')
+errorbar([1.2:length(CL)+.2], FR_spont_means_laser_on, FR_spont_sems_laser_on, 'co-')
+plot([1.2:length(CL)+.2], FR_spont_medians_laser_on, 'c*-')
+plot([1.1:length(CL)+.1], max(FR_spont_means_laser_on).*(H(2,:) <0.0125), '*r')
 legend('mean laser off', 'median laser off', 'mean laser on', 'median laser on')
-xticks([1:4]); xlim([0 5])
+xticks([1:length(CL)]); xlim([0 5])
 title('Spont')
-xticklabels({'2/3', '4', '5', '6'});
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('Mean (median)/SEM FR')
 
 % plot changes in FR in RS and FS by layer
 figure; subplot(2,1,1); hold on
-errorbar([1:4], FR_evoked_means_laser_off_rs, FR_evoked_sems_laser_off_rs, 'ko-')
-errorbar([1.1:4.1], FR_evoked_means_laser_off_fs, FR_evoked_sems_laser_off_fs, 'k*-')
-errorbar([1.2:4.2], FR_evoked_means_laser_on_rs, FR_evoked_sems_laser_on_rs, 'co-')
-errorbar([1.3:4.3], FR_evoked_means_laser_on_fs, FR_evoked_sems_laser_on_fs, 'c*-')
-xticks([1:4]); xlim([0 5])
+errorbar([1:length(CL)], FR_evoked_means_laser_off_rs, FR_evoked_sems_laser_off_rs, 'ko-')
+errorbar([1.1:length(CL) +.1], FR_evoked_means_laser_off_fs, FR_evoked_sems_laser_off_fs, 'k*-')
+errorbar([1.2:length(CL) +.1], FR_evoked_means_laser_on_rs, FR_evoked_sems_laser_on_rs, 'co-')
+errorbar([1.3:length(CL) +.3], FR_evoked_means_laser_on_fs, FR_evoked_sems_laser_on_fs, 'c*-')
+xticks([1:length(CL)]); xlim([0 5])
 legend('rs laser off', 'fs laser off', 'rs laser on', 'fs laser on')
 xticklabels({'2/3', '4', '5', '6'});
 ylabel('Mean FR /SEM')
 title('Evoked')
 subplot(2,1,2); hold on;
-errorbar([1:4], FR_spont_means_laser_off_rs, FR_spont_sems_laser_off_rs, 'ko-')
-errorbar([1.1:4.1], FR_spont_means_laser_off_fs, FR_spont_sems_laser_off_fs, 'k*-')
-errorbar([1.2:4.2], FR_spont_means_laser_on_rs, FR_spont_sems_laser_on_rs, 'co-')
-errorbar([1.3:4.3], FR_spont_means_laser_on_fs, FR_spont_sems_laser_on_fs, 'c*-')
+errorbar([1:length(CL)], FR_spont_means_laser_off_rs, FR_spont_sems_laser_off_rs, 'ko-')
+errorbar([1.1:length(CL)+.1], FR_spont_means_laser_off_fs, FR_spont_sems_laser_off_fs, 'k*-')
+errorbar([1.2:length(CL) +.2], FR_spont_means_laser_on_rs, FR_spont_sems_laser_on_rs, 'co-')
+errorbar([1.3:length(CL) +.3], FR_spont_means_laser_on_fs, FR_spont_sems_laser_on_fs, 'c*-')
 legend('rs laser off', 'fs laser off', 'rs laser on', 'fs laser on')
-xticks([1:4]); xlim([0 5])
+xticks([1:length(CL)]); xlim([0 5])
 title('Spont')
-xticklabels({'2/3', '4', '5', '6'});
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('Mean /SEM FR')
 
 %% Sound Modulation Index, Figure 3 plots
@@ -777,6 +766,25 @@ MI_sound_sit = (WN1(:,2) - SP1(:,2))./ (WN1(:,2) +SP1(:,2)); % sitting laser off
 MI_sound_run_laser = (WN1L(:,1) - SP1L(:,1))./ (WN1L(:,1) +SP1L(:,1)); % running laser on
 MI_sound_sit_laser = (WN1L(:,2) - SP1L(:,2))./ (WN1L(:,2) +SP1L(:,2)); % running laser on
 MI_sound_predicted = MI_sound_sit_laser + MI_sound_run; % linear sum of running and laser effects
+
+x=MI_sound_sit_laser - MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, recs1);
+c = multcompare(stats);
+title('Laser Effect (Sound MI laser on - Sound MI laser off), recordings')
+[m,s]=grpstats(x,recs1,{'mean','sem'});
+
+% does sound responsiveness differ across recordings
+x= MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, recs1);
+c = multcompare(stats);
+title('Sound MI across , recordings')
+[m,s]=grpstats(x,recs1,{'mean','sem'});
+
+x=MI_sound_sit_laser - MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, mouse_ID1);
+c = multcompare(stats);
+title('Laser Effect (Sound MI run - Sound MI sit), mice')
+[m,s]=grpstats(x,mouse_ID1,{'mean','sem'});
 
 % plot distributions laser off vs laser on
 figure; hold on;
@@ -861,12 +869,12 @@ legend('rs', 'fs')
 title(sprintf('Spont, RS r = %.4f, p = %d, FS = %.4f, p = %d', r1, p1, r2, p2))
 
 figure; hold on
-errorbar([1.1:4.1], meanMI_sound_sit_laserOFF, semMI_sound_sit_laserOFF, 'ko-');
-errorbar([1:4], meanMI_sound_sit_laserON, semMI_sound_sit_laserON, 'co-');
+errorbar([1.1:length(CL)+.1], meanMI_sound_sit_laserOFF, semMI_sound_sit_laserOFF, 'ko-');
+errorbar([1:length(CL)], meanMI_sound_sit_laserON, semMI_sound_sit_laserON, 'co-');
 xlabel('Cortical Layer')
 plot([0 5], [0 0], 'k--')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
+xticks([1:length(CL)]); xlim([0 5])
+xticklabels({'1', '2/3', '4', '5', '6'});
 ylabel('Modulation Index (mean/SEM)- sound effect');
 legend('laser off', 'laser on')
 fprintf('laer effect')
@@ -968,27 +976,27 @@ title('Dependence of Laser Effect on Sound MI with FR')
 % neurons and since different layers have different mean FR, it is a better
 % measure to check for layer specific effects
 LaserDiffs = [];
-for cl = 1:4
+for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 > layer(1) & depths1 < layer(2)); % indices of cells within this layer
      fs2 = fs1(indx); fs2 = logical(fs2); % fast spiking cells in this layer
     rs2 = rs1(indx); rs2 = logical(rs2); % regular spiking cells in this layer
     
-    mean_diff_rs(cl) = nanmean(laser_diff(rs2));
-    mean_diff_fs(cl) = nanmean(laser_diff(fs2));
+    mean_diff_rs(cl) = nanmean(laser_diff(indx(rs2)));
+    mean_diff_fs(cl) = nanmean(laser_diff(indx(fs2)));
     
-    sem_diff_rs(cl) = sem(laser_diff(rs2));
-    sem_diff_fs(cl) = sem(laser_diff(fs2));
+    sem_diff_rs(cl) = sem(laser_diff(indx(rs2)));
+    sem_diff_fs(cl) = sem(laser_diff(indx(fs2)));
     
     LaserDiffs = [ LaserDiffs; laser_diff(indx), ones(length(indx),1)*cl ];
 end
 figure; hold on
-errorbar([1:4], mean_diff_rs, sem_diff_rs, 'ko-')
-errorbar([1:4], mean_diff_fs, sem_diff_fs, 'k*-')
+errorbar([1:length(CL)], mean_diff_rs, sem_diff_rs, 'ko-')
+errorbar([1:length(CL)], mean_diff_fs, sem_diff_fs, 'k*-')
 xlabel('Cortical Layer')
 plot([0 5], [0 0], 'k--')
-xticks([1:4]); xlim([0 5])
-xticklabels({'2/3', '4', '5', '6'});
+xticks([1:5]); xlim([0 6])
+xticklabels({'1','2/3', '4', '5', '6'});
 ylabel('difference in sound MI (laser on - laser off)')
 
 [p,tbl1,stats] = kruskalwallis(LaserDiffs(:,1), LaserDiffs(:,2));

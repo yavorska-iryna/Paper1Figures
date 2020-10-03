@@ -1,5 +1,5 @@
 clear; close all; dbstop if error
-variables_dir = 'C:\Users\lab\Resilio Sync\Paper1Figures\code\variables';
+variables_dir = 'C:\Users\lab\Documents\GitHub\Paper1Figures\code\variables';
 
 cd(variables_dir);
 load('WNdataLaserOFF.mat'); % 'WNdataLaserOFF.mat (OFF1 -  longer responses), dynamic pupil threshold, but varified.
@@ -10,11 +10,10 @@ load('CellsQualityStats.mat')
 load('evoked_indx_epistatic.mat')
 load('example_cells_epistatic.mat')
 
-% good examples: 387, 428
-%  = 69, 74
+% good examples: figure 5: c = c) 387, b) 838
 sigma = 10;
-for cc = 1:length(cell_number1)
-    c =  cell_number1(cc);
+for cc = 838; %1:length(cell_number1)
+    c = cc;% cell_number1(cc);
     if ~isnan(c)
         st = data(c).mST_off;
         [x, sitting_st] = GaussSmooth(st, sigma, [-300 900]);
@@ -48,6 +47,7 @@ for cc = 1:length(cell_number1)
         plot([0 600], [-5 -5], ' m',  'LineWidth', 7)
         legend(' sitting laser off', ' running laser off', ' sitting laser on', ' running laser on', ' predicted response' )
         ylabel('Firing Rate (Hz)'); xlabel('time (ms)')
+        title(sprintf('%d', c))
         xlim([-60 120]); ylim([-11 100])
     end
 end
