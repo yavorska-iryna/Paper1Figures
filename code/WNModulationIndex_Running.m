@@ -203,6 +203,8 @@ meanPreStim1 = meanPreStim(evoked1,:);
 meanPreStim1L = meanPreStimL(evoked1,:);
 meanSilentSound1 = meanSilentSound(evoked1,:);
 depths1 = depths(evoked1);
+depths1 = depths1+100;
+
 fs1 = fs(evoked1);
 rs1 = Rs(evoked1);
 rs1 = logical(rs1); fs1 = logical(fs1);
@@ -243,6 +245,7 @@ fprintf('\n Mean+/-SEM RS = %.4f +/- %.4f, NS = %.4f +/- %.4f', nanmean(spontCha
 fprintf('\n Spont Change FR between RS and FS: z= %.4f, p = %d, r = %.4f', stats.zval, p, r)
 
 depth1 = depths(evoked1);
+depth1 = depths1+100;
 layer1 = nan(length(depth1),1);
 for l = 1:length(CL)
     layer = CL{l};
@@ -631,6 +634,13 @@ MI_sound_run_laser = (WN1L(:,1) - SP1L(:,1))./ (WN1L(:,1) +SP1L(:,1));
 MI_sound_sit_laser = (WN1L(:,2) - SP1L(:,2))./ (WN1L(:,2) +SP1L(:,2));
 MI_sound_predicted = MI_sound_sit_laser + MI_sound_run;
 
+% does the sound differ by layers
+x=MI_sound_run - MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, layers);
+c = multcompare(stats);
+title('Running Effect (Sound MI run - Sound MI sit), layers')
+[m,s]=grpstats(x, recs1,{'mean','sem'});
+
 % does running effect differ across recordings?
 x=MI_sound_run - MI_sound_sit;
 [p,tbl1,stats] = kruskalwallis(x, recs1);
@@ -801,9 +811,11 @@ ylabel('Modulation Index')
 meanMI_sound = nanmean(MI_sound_sit);
 semMI_sound = sem(MI_sound_sit);
 
+
+
+
 %% Test results on different repetitions
 
-%%  STOP HERE, THE REST IS OLD
 for i = 1:100
     cc = 0;
     for c = 1 : length(data)

@@ -35,7 +35,7 @@ recs = []; cells=[]; mouse_ID = [];
 evoked = zeros(length(data),4); zstats = zeros(length(data),4);
 color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
 nreps_check_running = -1; %number of repetitions in each condition for comparison
-CL = {[0 130], [129 380], [379 525], [524 806], [805 2000]}; id =0;
+CL = {[129 380], [379 525], [524 806], [805 2000]}; id =0;
 
 cdVIP; load('Silence_DistanceCorr_dirs.mat'); 
 cdPV;  load('allPINPdirs.mat') % load all 45 dirs
@@ -425,7 +425,7 @@ errorbar([1:length(CL)], meanLaserEffect_evoked, semLaserEffect_evoked, 'ko-');
 xlabel('Cortical Layer')
 plot([0 5], [0 0], '--')
 xticks([1:length(CL)]); xlim([0 5])
-xticklabels({'1','2/3', '4', '5', '6'});
+xticklabels({'2/3', '4', '5', '6'});
 ylabel('Laser Effect');
 title_string = sprintf('WN On response, n = %d, %d, %d, %d',  n_layer_evokedLaser);
 title(title_string)
@@ -435,7 +435,7 @@ errorbar([1:length(CL)], meanLaserEffect_spont, semLaserEffect_spont, 'ko-');
 xlabel('Cortical Layer')
 plot([0 5], [0 0], '--')
 xticks([1:length(CL)]); xlim([0 5])
-xticklabels({'1','2/3', '4', '5', '6'});
+xticklabels({'2/3', '4', '5', '6'});
 ylabel('Laser Effect');
 title_string = sprintf('Spont On response, n = %d, %d, %d, %d',  n_layer_spLaser);
 title(title_string)
@@ -536,12 +536,12 @@ title(title_str); pbaspect([1 1 1]);
 % RS and FS evoked and spont by layers
 figure; % evoked
 subplot(2,1,1); hold on
-errorbar([0.9:4.9], meanLaserEffect_evoked_rs, semLaserEffect_evoked_rs, 'ko-');
-errorbar([1.1:5.1], meanLaserEffect_evoked_fs, semLaserEffect_evoked_fs, 'k*-');
+errorbar([0.9:length(CL)-.1], meanLaserEffect_evoked_rs, semLaserEffect_evoked_rs, 'ko-');
+errorbar([1.1:length(CL)+.1], meanLaserEffect_evoked_fs, semLaserEffect_evoked_fs, 'k*-');
 xlabel('Cortical Layer')
 plot([0 length(CL)+1], [0 0], 'k--')
 xticks([1:length(CL)]); xlim([0 length(CL)+1])
-xticklabels({'1','2/3', '4', '5', '6'});
+xticklabels({'2/3', '4', '5', '6'});
 ylabel('Laser Effect'); 
 legend('RS', 'FS')
 title_string = sprintf('Laser Effect, Evoked, RS n = %d, %d, %d, %d, %d, n = %d, %d, %d, %d, %d',  n_rs_layer, n_fs_layer);
@@ -553,7 +553,7 @@ errorbar([1.1:length(CL)+.1], meanLaserEffect_spont_fs, semLaserEffect_spont_fs,
 xlabel('Cortical Layer')
 plot([0 length(CL)+1], [0 0], 'k--')
 xticks([1:length(CL)]); xlim([0 length(CL)+1])
-xticklabels({'1','2/3', '4', '5', '6'});
+xticklabels({'2/3', '4', '5', '6'});
 ylabel('Laser Effect');
 legend('RS', 'FS')
 title_string = sprintf('Laser Effectt, Spont activity');
@@ -756,7 +756,7 @@ errorbar([1.3:length(CL) +.3], FR_spont_means_laser_on_fs, FR_spont_sems_laser_o
 legend('rs laser off', 'fs laser off', 'rs laser on', 'fs laser on')
 xticks([1:length(CL)]); xlim([0 5])
 title('Spont')
-xticklabels({'1','2/3', '4', '5', '6'});
+xticklabels({'2/3', '4', '5', '6'});
 ylabel('Mean /SEM FR')
 
 %% Sound Modulation Index, Figure 3 plots
@@ -877,7 +877,7 @@ xticks([1:length(CL)]); xlim([0 5])
 xticklabels({'1', '2/3', '4', '5', '6'});
 ylabel('Modulation Index (mean/SEM)- sound effect');
 legend('laser off', 'laser on')
-fprintf('laer effect')
+fprintf('laser effect')
 [p, h, stats] = signrank(soundMI_laserON(:,1), soundMI_laserOFF(:,1));
 title_string = sprintf( 'On response MI, n = %d, %d, %d, %d, laser effect, p = %d',  n_layer_laserOFF, p);
 title(title_string)
@@ -1037,7 +1037,7 @@ MI1_fsL = (WN1L(fs1,2) -WN1(fs1,2))./(WN1L(fs1,2) + WN1(fs1,2)); % laser fs
 MI1_sp_rsL = (SP1L(rs1,2) -SP1(rs1,2))./(SP1L(rs1,2) + SP1(rs1,2)); % laser
 MI1_sp_fsL = (SP1L(fs1,2) -SP1(fs1,2))./(SP1L(fs1,2) + SP1(fs1,2)); % laser
 
-% VIP effect in ech state
+% VIP effect in each state
 figure; hold on
 bar([.8  1.8 ], [nanmean(MI1_sp_rsL) nanmean(MI1_rsL)], 'BarWidth', .1)
 bar([.9  1.9], [nanmean(MI1_sp_fsL) nanmean(MI1_fsL)], 'BarWidth', .1)
