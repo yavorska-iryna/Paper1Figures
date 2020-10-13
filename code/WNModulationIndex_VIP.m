@@ -213,8 +213,8 @@ WN1L = meanONL(evoked1,:);
 SP1 = SP(evoked1,:);
 SP1L = SPL(evoked1,:);
 
-depths = depths+100;
 depths1 = depths(evoked1);
+depths1 = depths1 +100;
 fs1 = fs(evoked1); rs1 = Rs(evoked1);
 rs1 = logical(rs1); fs1 = logical(fs1);
 
@@ -380,8 +380,7 @@ layers1 = nan(sum(evoked1),1);
 
 LaserEffect_evoked = (WN1L(:,2) - WN1(:,2))./(WN1L(:,2) + WN1(:,2)); % Laser effect on evoked FR
 LaserEffect_spont = (SP1L(:,2) - SP1(:,2))./(SP1L(:,2) + SP1(:,2)); % Laser effect on spont FR
-
-
+fs = []; rs = [];
 for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 > layer(1) & depths1 <layer(2)); % indices of cells within this layer
@@ -390,6 +389,7 @@ for cl = 1:length(CL)
     fs2 = fs1(indx); fs2 = logical(fs2); % fast spiking cells in this layer
     rs2 = rs1(indx); rs2 = logical(rs2); % regular spiking cells in this layer
     layers1(indx) = 1*cl;
+    fs = [fs; fs2]; rs = [rs; rs2];
     
     % % evoked (WN response)
     meanLaserEffect_evoked(cl) = nanmean(LaserEffect_evoked(indx)); % mean laser effect
@@ -418,6 +418,22 @@ for cl = 1:length(CL)
     n_rs_layer(cl) = sum(~isnan(LaserEffect_evoked(indx(rs2)))); % number of regular spiking cells in this layer
     n_fs_layer(cl) = sum(~isnan(LaserEffect_evoked(indx(fs2)))); % number of fast spiking cells in this layer   
 end
+
+fs = logical(fs); rs = logical(rs);
+x = LASER_EFFECT_EVOKED(fs,1);
+[p,tbl1,stats] = kruskalwallis(x, LASER_EFFECT_EVOKED(fs,2));
+c = multcompare(stats);
+title('VIP effect on Evoked FS cells')
+
+x = LASER_EFFECT_EVOKED(rs,1);
+[p,tbl1,stats] = kruskalwallis(x, LASER_EFFECT_EVOKED(rs,2));
+c = multcompare(stats);
+title('VIP effect on Evoked RS cells')
+
+x = LASER_EFFECT_SPONT(fs,1);
+[p,tbl1,stats] = kruskalwallis(x, LASER_EFFECT_SPONT(fs,2));
+c = multcompare(stats);
+title('VIP effect on Evoked FS cells')
 
 % state by layer without layer
 figure; hold on; subplot(2,1,1); hold on
@@ -595,7 +611,7 @@ for cl = 1:length(CL)
     rs2 = rs1(indx); rs2 = logical(rs2); % regular spiking cells in this layer
     FSindx = [FSindx; fs2]; RSindx = [RSindx; rs2];
     
-    if cl == 3 % save index of cells in layer 4. to look at them closer
+    if cl == 2 % save index of cells in layer 4. to look at them closer
         layer4_index = indx;
     end
     
@@ -784,6 +800,12 @@ x=MI_sound_sit_laser - MI_sound_sit;
 [p,tbl1,stats] = kruskalwallis(x, mouse_ID1);
 c = multcompare(stats);
 title('Laser Effect (Sound MI run - Sound MI sit), mice')
+[m,s]=grpstats(x,mouse_ID1,{'mean','sem'});
+
+x=MI_sound_sit_laser - MI_sound_sit;
+[p,tbl1,stats] = kruskalwallis(x, layers1);
+c = multcompare(stats);
+title('Laser Effect (Sound MI layer on - Sound MI laser off) layers')
 [m,s]=grpstats(x,mouse_ID1,{'mean','sem'});
 
 % plot distributions laser off vs laser on

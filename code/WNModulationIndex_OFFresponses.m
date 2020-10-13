@@ -34,7 +34,7 @@ recs = []; cells=[]; cell_number= nan(length(data),2);
 evoked = zeros(length(data),4); zstats = zeros(length(data),4);
 color1 = [0.7 0.7 0.7]; color2 = [0.2 0.2 0.2];
 nreps_check_running = 6; %number of repetitions in each condition for comparison
-CL = {[0 301], [300 401], [400 601], [600 2000]};
+CL = { [129 380], [379 525], [524 806], [805 2000]};
 
 cdVIP; load('Silence_DistanceCorr_dirs.mat')
 
@@ -163,6 +163,7 @@ meanPreStim1 = meanPreStim(evoked1,:);
 meanPreStim1L = meanPreStimL(evoked1,:);
 meanSilentSound1 = meanSilentSound(evoked1,:);
 depths1 = depths(evoked1);
+depths1 = depths1+100;
 fs1 = fs(evoked1);
 rs1 = Rs(evoked1);
 rs1 = logical(rs1); fs1 = logical(fs1);
@@ -574,6 +575,7 @@ fprintf('running vs sitting, laser on')
 for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
+    
     meanMI_sound_run(cl) = nanmean(MI_sound_run(indx));
     meanMI_sound_sit(cl) = nanmean(MI_sound_sit(indx));
     semMI_sound_run(cl) = sem(MI_sound_run(indx));
@@ -814,10 +816,21 @@ title(title_string)
 set(gcf, 'PaperPositionMode', 'auto');
 set(gcf, 'Position',  [260 124 902 864])
 
-% epistatic analysis with firing rate
+layer1 = nan(length(depths1),1);
+for l = 1:length(CL)
+    layer = CL{l};
+    for d = 1:length(depths1)
+        if depths1(d) > layer(1) & depths1(d) < layer(2)
+            layer1(d) = l;
+        end
+    end
+end
 
+layers1 = layer1;
+fprintf('\nSound MI sitting by layer =%.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f,  \n',  nanmean(MI_sound_sit(layers1==1)), sem(MI_sound_sit(layers1==1)), ...
+    nanmean(MI_sound_sit(layers1==2)), sem(MI_sound_sit(layers1==2)), nanmean(MI_sound_sit(layers1==3)), sem(MI_sound_sit(layers1==3)), nanmean(MI_sound_sit(layers1==4)), sem(MI_sound_sit(layers1==4)));
 
-
-%%  STOP HERE, THE REST IS OLD
+fprintf('\nSound MI running by layer =%.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f,  \n',  nanmean(MI_sound_run(layers1==1)), sem(MI_sound_run(layers1==1)), ...
+    nanmean(MI_sound_run(layers1==2)), sem(MI_sound_run(layers1==2)), nanmean(MI_sound_run(layers1==3)), sem(MI_sound_run(layers1==3)), nanmean(MI_sound_run(layers1==4)), sem(MI_sound_run(layers1==4)));
 
 

@@ -244,13 +244,12 @@ fprintf('\n Mean+/-SEM RS = %.4f +/- %.4f, NS = %.4f +/- %.4f', nanmean(spontCha
     nanmean(spontChange(fs1)), sem(spontChange(fs1)))
 fprintf('\n Spont Change FR between RS and FS: z= %.4f, p = %d, r = %.4f', stats.zval, p, r)
 
-depth1 = depths(evoked1);
-depth1 = depths1+100;
-layer1 = nan(length(depth1),1);
+
+layer1 = nan(length(depths1),1);
 for l = 1:length(CL)
     layer = CL{l};
-    for d = 1:length(depth1)
-        if depth1(d) > layer(1) & depth1(d) < layer(2)
+    for d = 1:length(depths1)
+        if depths1(d) > layer(1) & depths1(d) < layer(2)
             layer1(d) = l;
         end
     end
@@ -260,7 +259,7 @@ end
 [p,tbl1,stats] = kruskalwallis(spontChange, layer1);
 c = multcompare(stats);
 title('Spont all cells, running FR change')
-x=modulation_indx1_rs;
+
 [p,tbl1,stats] = kruskalwallis(evokedChange, layer1);
 c = multcompare(stats);
 title('Evoked all cells, running FR change')
@@ -269,7 +268,7 @@ title('Evoked all cells, running FR change')
 [p,tbl1,stats] = kruskalwallis(spontChange(rs1), layer1(rs1));
 c = multcompare(stats);
 title('Spont RS, running FR change')
-x=modulation_indx1_rs;
+
 [p,tbl1,stats] = kruskalwallis(evokedChange(rs1), layer1(rs1));
 c = multcompare(stats);
 title('Evoked RS, running FR change')
@@ -278,7 +277,7 @@ title('Evoked RS, running FR change')
 [p,tbl1,stats] = kruskalwallis(spontChange(fs1), layer1(fs1));
 c = multcompare(stats);
 title('Spont FS, running FR change')
-x=modulation_indx1_rs;
+
 [p,tbl1,stats] = kruskalwallis(evokedChange(fs1), layer1(fs1));
 c = multcompare(stats);
 title('Evoked FS, running FR change')
@@ -858,4 +857,12 @@ ylabel('Sound Modulation Index (Mean/Sem)')
 fprintf('\nN cells Sound MI sitting =%d, N running = %d \n',  sum(~isnan(MI_sound_sit)),  sum(~isnan(MI_sound_run)))
 fprintf('\nN cells WN =%d, N running = %d \n',  sum(~isnan(WN1(:,2))),  sum(~isnan(WN1(:,1))))
 fprintf('\nN cells Spont sitting =%d, N running = %d \n',  sum(~isnan(SP1(:,2))),  sum(~isnan(SP1(:,1))))
+
+layers1 = layer1;
+fprintf('\nSound MI sitting by layer =%.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f,  \n',  nanmean(MI_sound_sit(layers1==1)), sem(MI_sound_sit(layers1==1)), ...
+    nanmean(MI_sound_sit(layers1==2)), sem(MI_sound_sit(layers1==2)), nanmean(MI_sound_sit(layers1==3)), sem(MI_sound_sit(layers1==3)), nanmean(MI_sound_sit(layers1==4)), sem(MI_sound_sit(layers1==4)));
+
+fprintf('\nSound MI running by layer =%.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f, %.2f +/- %.2f,  \n',  nanmean(MI_sound_run(layers1==1)), sem(MI_sound_run(layers1==1)), ...
+    nanmean(MI_sound_run(layers1==2)), sem(MI_sound_run(layers1==2)), nanmean(MI_sound_run(layers1==3)), sem(MI_sound_run(layers1==3)), nanmean(MI_sound_run(layers1==4)), sem(MI_sound_run(layers1==4)));
+
 
