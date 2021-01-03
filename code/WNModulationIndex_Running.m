@@ -40,6 +40,7 @@ CL = { [129 380], [379 525], [524 806], [805 2000]};  id = 0;
 cdVIP; load('Silence_DistanceCorr_dirs.mat')
 cdPV;  load('allPINPdirs.mat') % load all 45 dirs
 PINPdirs = PINPDIRS;
+all_dirs = nan(length(data),1);
 
 % collect waveform, SNR, and uQ from cells. Must match length of data.
 try
@@ -61,7 +62,7 @@ end
 
 for cc =1:length(data)
     if data(cc).dir < 47
-        if data(cc).dir~=33 && data(cc).dir~=0 % excluding putlier recordings
+        if data(cc).dir~=33 && data(cc).dir~=0 % excluding outlier recordings
         try
             meanSpikeCount = nanmean([data(cc).SpikeCountWN data1(cc).SpikeCountWN ]); 
         catch
@@ -149,6 +150,8 @@ for cc =1:length(data)
             end
         end
         d = data(cc).dir;
+        
+        all_dirs(cc) = d;
         try
             runsit_reps(d,:,:,:) = [data(cc).nrepsWNMon data(cc).nrepsWNMoff data(cc).nrepsSSMon data(cc).nrepsSSMoff];
         catch

@@ -843,9 +843,13 @@ pbaspect([1 1 1]);  set(gcf, 'PaperPositionMode', 'auto');
 
 %look at the effect of laser on sound modulation by layer
 soundMI_laserOFF = []; soundMI_laserON = [];
+soundMI_laserOFF_rs = []; soundMI_laserON_rs = [];
+soundMI_laserOFF_fs = []; soundMI_laserON_fs = [];
 for cl = 1:length(CL)
     layer = CL{cl}; % layer depth limits
     indx = find(depths1 >layer(1) & depths1 <layer(2)); % indices of cells within this layer
+    rs2 = rs1(indx); rs2 = logical(rs2);
+    fs2 = fs1(indx); fs2 = logical(fs2);
     
     meanMI_sound_sit_laserOFF(cl) = nanmean(MI_sound_sit(indx)); % mean sound MI sitting in this layer
     semMI_sound_sit_laserOFF(cl) = sem(MI_sound_sit(indx)); % SEM sound MI sitting
@@ -856,6 +860,30 @@ for cl = 1:length(CL)
     semMI_sound_sit_laserON(cl) = sem(MI_sound_sit_laser(indx));
     n_layer_laserON(cl) = sum(~isnan(MI_sound_sit_laser(indx)));
     soundMI_laserON = [soundMI_laserON; MI_sound_sit_laser(indx) ones(length(MI_sound_sit_laser(indx)),1)*cl]; % collect individual sound MI with layer assignment
+    
+    %RS
+    meanMI_sound_sit_laserOFF_rs(cl) = nanmean(MI_sound_sit(indx(rs2))); % mean sound MI sitting in this layer
+    semMI_sound_sit_laserOFF_rs(cl) = sem(MI_sound_sit(indx(rs2))); % SEM sound MI sitting
+    n_layer_laserOFF_rs(cl) = sum(~isnan(MI_sound_sit(indx(rs2)))); % number of non NaN sound MI in this layer
+    soundMI_laserOFF_rs = [soundMI_laserOFF_rs; MI_sound_sit(indx(rs2)) ones(length(MI_sound_sit(indx(rs2))),1)*cl]; % collect individual sound MI with layer assignment
+    
+    meanMI_sound_sit_laserON_rs(cl) = nanmean(MI_sound_sit_laser(indx(rs2)));
+    semMI_sound_sit_laserON_rs(cl) = sem(MI_sound_sit_laser(indx(rs2)));
+    n_layer_laserON_rs(cl) = sum(~isnan(MI_sound_sit_laser(indx(rs2))));
+    soundMI_laserON_rs = [soundMI_laserON_rs; MI_sound_sit_laser(indx(rs2)) ones(length(MI_sound_sit_laser(indx(rs2))),1)*cl];
+    
+    %FS
+    meanMI_sound_sit_laserOFF_fs(cl) = nanmean(MI_sound_sit(indx(fs2))); % mean sound MI sitting in this layer
+    semMI_sound_sit_laserOFF_fs(cl) = sem(MI_sound_sit(indx(fs2))); % SEM sound MI sitting
+    n_layer_laserOFF_fs(cl) = sum(~isnan(MI_sound_sit(indx(fs2)))); % number of non NaN sound MI in this layer
+    soundMI_laserOFF_fs = [soundMI_laserOFF_fs; MI_sound_sit(indx(fs2)) ones(length(MI_sound_sit(indx(fs2))),1)*cl]; % collect individual sound MI with layer assignment
+    
+    meanMI_sound_sit_laserON_fs(cl) = nanmean(MI_sound_sit_laser(indx(fs2)));
+    semMI_sound_sit_laserON_fs(cl) = sem(MI_sound_sit_laser(indx(fs2)));
+    n_layer_laserON_fs(cl) = sum(~isnan(MI_sound_sit_laser(indx(fs2))));
+    soundMI_laserON_fs = [soundMI_laserON_fs; MI_sound_sit_laser(indx(fs2)) ones(length(MI_sound_sit_laser(indx(fs2))),1)*cl];
+
+
 end
 
 % ANOVA to check if sound MI is different across the layers
@@ -893,7 +921,7 @@ title(sprintf('Spont, RS r = %.4f, p = %d, FS = %.4f, p = %d', r1, p1, r2, p2))
 figure; hold on
 errorbar([1.1:length(CL)+.1], meanMI_sound_sit_laserOFF, semMI_sound_sit_laserOFF, 'ko-');
 errorbar([1:length(CL)], meanMI_sound_sit_laserON, semMI_sound_sit_laserON, 'co-');
-xlabel('Cortical Layer')
+xlabel('Cortical Layers')
 plot([0 5], [0 0], 'k--')
 xticks([1:length(CL)]); xlim([0 5])
 xticklabels({'1', '2/3', '4', '5', '6'});
@@ -904,6 +932,43 @@ fprintf('laser effect')
 title_string = sprintf( 'On response MI, n = %d, %d, %d, %d, laser effect, p = %d',  n_layer_laserOFF, p);
 title(title_string)
 set(gcf, 'PaperPositionMode', 'auto');
+
+% plot RS and FS seperately
+
+figure; hold on
+subplot(2,1,1); hold on
+errorbar([1.1:length(CL)+.1], meanMI_sound_sit_laserOFF_rs, semMI_sound_sit_laserOFF_rs, 'ko-');
+errorbar([1:length(CL)], meanMI_sound_sit_laserON_rs, semMI_sound_sit_laserON_rs, 'co-');
+xlabel('Cortical Layers')
+plot([0 5], [0 0], 'k--')
+xticks([1:length(CL)]); xlim([0 5])
+xticklabels({'1', '2/3', '4', '5', '6'});
+ylabel('Modulation Index (mean/SEM)- sound effect');
+legend('laser off', 'laser on')
+fprintf('laser effect')
+[p, h, stats] = signrank(soundMI_laserON_rs(:,1), soundMI_laserOFF_rs(:,1));
+title_string = sprintf( 'On response MI, n = %d, %d, %d, %d, laser effect, p = %d',  n_layer_laserOFF_rs, p);
+title(title_string)
+
+%n = 10, 28, 126, 3
+
+subplot(2,1,2); hold on
+errorbar([1.1:length(CL)+.1], meanMI_sound_sit_laserOFF_fs, semMI_sound_sit_laserOFF_fs, 'go-');
+errorbar([1:length(CL)], meanMI_sound_sit_laserON_fs, semMI_sound_sit_laserON_fs, 'co-');
+xlabel('Cortical Layers')
+plot([0 5], [0 0], 'k--')
+xticks([1:length(CL)]); xlim([0 5])
+xticklabels({'1', '2/3', '4', '5', '6'});
+ylabel('Modulation Index (mean/SEM)- sound effect');
+legend('laser off', 'laser on')
+fprintf('laser effect')
+[p, h, stats] = signrank(soundMI_laserON_fs(:,1), soundMI_laserOFF_fs(:,1));
+title_string = sprintf( 'On response MI, n = %d, %d, %d, %d, laser effect, p = %d',  n_layer_laserOFF_fs, p);
+title(title_string)
+set(gcf, 'PaperPositionMode', 'auto');
+
+%n = 10, 12, 52, 3,
+
 
 figure; hold on;
 plot(MI_sound_sit(rs1), MI_sound_sit_laser(rs1), 'ko')
